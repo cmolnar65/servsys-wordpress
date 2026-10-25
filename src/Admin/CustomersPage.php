@@ -276,7 +276,7 @@ final class CustomersPage {
 		$active  = isset( $site['active'] ) ? (int) $site['active'] : 1;
 		echo '<h3>' . ( $editing ? 'Edit Site' : 'Add Site' ) . '</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_site_' . $customer_id );
-		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"'><input type="hidden" name="site_id" value="' . (int) $site['id'] . '">';
+		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . (int) $site['id'] . '">';
 		foreach ( array( 'name' => 'Site Name', 'address1' => 'Address', 'address2' => 'Address 2', 'city' => 'City', 'state' => 'State', 'postal_code' => 'Postal Code', 'phone' => 'Phone' ) as $name => $label ) {
 			$this->input( $name, $label, $site[ $name ], in_array( $name, array( 'address1', 'city', 'state', 'postal_code' ), true ) );
 		}
