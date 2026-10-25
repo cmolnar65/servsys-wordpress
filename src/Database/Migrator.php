@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Database;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Database;
 
 final class Migrator {
 	public static function current_version(): int {
