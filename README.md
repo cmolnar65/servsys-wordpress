@@ -53,7 +53,7 @@ Run unit tests:
 composer test
 ```
 
-GitHub Actions tests PHP 7.4 through PHP 8.4.
+GitHub Actions tests PHP 7.4 through PHP 8.5.
 
 ## Architecture
 
