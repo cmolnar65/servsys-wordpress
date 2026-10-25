@@ -29,6 +29,7 @@ final class Installer {
 		}
 
 		self::seed_customer_types( $wpdb );
+		self::preserve_legacy_customer_types( $wpdb );
 		self::migrate_customer_types( $wpdb );
 
 		update_option( 'servsys_db_version', SERVSYS_DB_VERSION, false );
@@ -48,6 +49,34 @@ final class Installer {
 						'name'       => $name,
 						'slug'       => $slug,
 						'sort_order' => ( $order + 1 ) * 10,
+						'active'     => 1,
+						'created_at' => $now,
+						'updated_at' => $now,
+					)
+				);
+			}
+		}
+	}
+
+	private static function preserve_legacy_customer_types( $wpdb ): void {
+		$customers = $wpdb->prefix . 'servsys_customers';
+		$types     = $wpdb->prefix . 'servsys_customer_types';
+		$now       = current_time( 'mysql', true );
+		$names     = $wpdb->get_col( "SELECT DISTINCT TRIM(customer_type) FROM {$customers} WHERE customer_type IS NOT NULL AND TRIM(customer_type) <> ''" );
+
+		foreach ( $names as $name ) {
+			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE LOWER(name) = LOWER(%s)", $name ) );
+			if ( ! $existing ) {
+				$slug = sanitize_title( $name );
+				if ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE slug = %s", $slug ) ) ) {
+					$slug .= '-' . substr( md5( $name ), 0, 8 );
+				}
+				$wpdb->insert(
+					$types,
+					array(
+						'name'       => $name,
+						'slug'       => $slug,
+						'sort_order' => 100,
 						'active'     => 1,
 						'created_at' => $now,
 						'updated_at' => $now,

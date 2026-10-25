@@ -58,7 +58,7 @@ final class CustomersPage {
 
 		echo '<form method="get"><input type="hidden" name="page" value="servsys">';
 		echo '<p class="search-box">';
-		echo '<a class="button" href="' . esc_url( $clear_url ) . '" title="Clear customer search" aria-label="Clear customer search"><span class="dashicons dashicons-dismiss" style="vertical-align:middle"></span></a> ';
+		echo '<a class="button" href="' . esc_url( $clear_url ) . '" title="Clear customer search" aria-label="Clear customer search"><span class="dashicons dashicons-dismiss"></span><span class="screen-reader-text">Clear customer search</span></a> ';
 		echo '<input type="search" name="s" value="' . esc_attr( $term ) . '"> ';
 		submit_button( 'Search Customers', 'secondary', '', false );
 		echo '</p></form>';
@@ -216,13 +216,14 @@ final class CustomersPage {
 		echo '<div class="wrap"><h1>ServSys Customer Types</h1><p>Configure the customer types available on customer records.</p>';
 		echo '<table class="widefat striped"><thead><tr><th>Name</th><th>Sort Order</th><th>Active</th><th>Action</th></tr></thead><tbody>';
 		foreach ( $types as $type ) {
-			echo '<tr><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			$form_id = 'servsys-customer-type-' . (int) $type['id'];
+			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			wp_nonce_field( 'servsys_save_customer_type_' . (int) $type['id'] );
 			echo '<input type="hidden" name="action" value="servsys_save_customer_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '">';
-			echo '<td><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></td>';
-			echo '<td><input type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td>';
-			echo '<td><label><input type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td>';
-			echo '<td><button class="button" type="submit">Save</button></td></form></tr>';
+			echo '<input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
+			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td>';
+			echo '<td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td>';
+			echo '<td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
 		}
 		echo '</tbody></table>';
 		echo '<h2>Add Customer Type</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
