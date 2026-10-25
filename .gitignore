@@ -51,3 +51,6 @@ wp-config.php
 /vendor/
 /.phpunit.result.cache
 /.phpunit.cache/
+
+# Local release packages
+/build/
