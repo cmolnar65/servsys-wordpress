@@ -41,10 +41,13 @@ final class CustomersPage {
 		}
 
 		$customer_id = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
-		$edit        = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
+		$action      = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+		$edit        = 'edit' === $action;
 
 		echo '<div class="wrap"><h1>ServSys Customers</h1>';
-		if ( $edit ) {
+		if ( 'edit-site' === $action && $customer_id ) {
+			$this->render_customer_view( $customer_id );
+		} elseif ( $edit ) {
 			$this->render_customer_edit( $customer_id );
 		} elseif ( $customer_id ) {
 			$this->render_customer_view( $customer_id );
@@ -101,7 +104,14 @@ final class CustomersPage {
 		$sites = ( new SiteRepository() )->for_customer( $customer_id, true );
 		echo '<hr><h2>Sites &amp; Equipment</h2>';
 		$this->render_sites_table( $customer_id, $sites );
-		if ( current_user_can( Capabilities::CREATE_SITES ) ) {
+		$edit_site_id = isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0;
+		$edit_site = ( 'edit-site' === ( isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '' ) && $edit_site_id ) ? ( new SiteRepository() )->find( $edit_site_id ) : null;
+		if ( $edit_site && (int) $edit_site['customer_id'] !== $customer_id ) {
+			$edit_site = null;
+		}
+		if ( $edit_site && current_user_can( Capabilities::EDIT_SITES ) ) {
+			$this->render_site_form( $customer_id, $edit_site );
+		} elseif ( current_user_can( Capabilities::CREATE_SITES ) ) {
 			$this->render_site_form( $customer_id );
 		}
 
