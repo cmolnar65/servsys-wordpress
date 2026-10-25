@@ -84,7 +84,7 @@ final class EquipmentPage {
 			wp_die( esc_html__( 'A valid customer site is required before equipment can be added.', 'servsys' ) );
 		}
 
-		$item = $item ?: array_fill_keys( array( 'equipment_type', 'brand', 'model_number', 'serial_number', 'filter', 'seer', 'btu_output', 'notes' ), '' );
+		$item = $item ?: array_fill_keys( array( 'equipment_type', 'brand', 'model_number', 'serial_number', 'filter', 'refrigerant_type', 'seer', 'btu_output', 'notes' ), '' );
 		$item['active'] = isset( $item['active'] ) ? $item['active'] : 1;
 		$list_url       = admin_url( 'admin.php?page=servsys-equipment' );
 		$customer_url   = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id );
@@ -101,6 +101,7 @@ final class EquipmentPage {
 		$this->input( 'model_number', 'Model Number', $item['model_number'] );
 		$this->input( 'serial_number', 'Serial Number', $item['serial_number'] );
 		$this->input( 'filter', 'Filter', $item['filter'] );
+		$this->input( 'refrigerant_type', 'Refrigerant Type', $item['refrigerant_type'] );
 		$this->input( 'seer', 'SEER', $item['seer'] );
 		$this->input( 'btu_output', 'BTU Output', $item['btu_output'] );
 		echo '<p><label>Notes<br><textarea class="large-text" rows="5" name="notes">' . esc_textarea( $item['notes'] ) . '</textarea></label></p>';
