@@ -8,15 +8,12 @@ STAGE_DIR="${BUILD_DIR}/${PLUGIN_SLUG}"
 
 cd "${ROOT_DIR}"
 
-if ! command -v git >/dev/null 2>&1; then
-    echo "ERROR: git is required." >&2
-    exit 1
-fi
-
-if ! command -v zip >/dev/null 2>&1; then
-    echo "ERROR: zip is required." >&2
-    exit 1
-fi
+for command in git zip unzip composer sha256sum; do
+    if ! command -v "${command}" >/dev/null 2>&1; then
+        echo "ERROR: ${command} is required." >&2
+        exit 1
+    fi
+done
 
 if [[ ! -f "servsys.php" ]]; then
     echo "ERROR: servsys.php not found. Run this script from the repository root." >&2
@@ -42,18 +39,26 @@ mkdir -p "${STAGE_DIR}"
 
 git archive --format=tar HEAD | tar -x -C "${STAGE_DIR}"
 
-rm -rf     "${STAGE_DIR}/.github"     "${STAGE_DIR}/tests"     "${STAGE_DIR}/build"
+# Install the production autoloader before removing Composer build metadata.
+composer install \
+    --no-dev \
+    --prefer-dist \
+    --no-interaction \
+    --no-progress \
+    --optimize-autoloader \
+    --working-dir="${STAGE_DIR}"
 
-rm -f     "${STAGE_DIR}/.gitignore"     "${STAGE_DIR}/build-release.sh"     "${STAGE_DIR}/composer.json"     "${STAGE_DIR}/composer.lock"     "${STAGE_DIR}/phpunit.xml.dist"
+rm -rf \
+    "${STAGE_DIR}/.github" \
+    "${STAGE_DIR}/tests" \
+    "${STAGE_DIR}/build"
 
-if [[ -f composer.json ]]; then
-    if ! command -v composer >/dev/null 2>&1; then
-        echo "ERROR: composer is required to build production dependencies." >&2
-        exit 1
-    fi
-
-    composer install         --no-dev         --prefer-dist         --no-interaction         --no-progress         --optimize-autoloader         --working-dir="${STAGE_DIR}"
-fi
+rm -f \
+    "${STAGE_DIR}/.gitignore" \
+    "${STAGE_DIR}/build-release.sh" \
+    "${STAGE_DIR}/composer.json" \
+    "${STAGE_DIR}/composer.lock" \
+    "${STAGE_DIR}/phpunit.xml.dist"
 
 (
     cd "${BUILD_DIR}"
@@ -66,7 +71,7 @@ if ! unzip -l "${ZIP_FILE}" | grep -q " ${PLUGIN_SLUG}/servsys.php$"; then
     exit 1
 fi
 
-for forbidden in     ".git/"     ".github/"     "tests/"     "build-release.sh"     "phpunit.xml.dist"; do
+for forbidden in ".git/" ".github/" "tests/" "build-release.sh" "composer.json" "composer.lock" "phpunit.xml.dist"; do
     if unzip -l "${ZIP_FILE}" | grep -q "${forbidden}"; then
         echo "ERROR: Package audit failed: forbidden path found: ${forbidden}" >&2
         rm -f "${ZIP_FILE}"
