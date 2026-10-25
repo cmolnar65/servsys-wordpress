@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 namespace ServSys\Database;
 
 final class Schema {
