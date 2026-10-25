@@ -86,7 +86,7 @@ The current `develop` branch extends the customer/site foundation with equipment
 - Equipment repository/service layer with customer/site ownership validation
 - **ServSys → Equipment** searchable administration workspace
 - Customer-site equipment tables with Add/Edit Equipment workflow
-- Equipment fields for type, brand, model, serial number, filter, SEER, BTU output, notes, and active state
+- Equipment fields for type, brand, model, serial number, filter, refrigerant type, SEER, BTU output, notes, and active state
 - Equipment-specific WordPress capabilities
 - Unit coverage for equipment schema and capabilities
 
