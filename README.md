@@ -60,3 +60,18 @@ GitHub Actions tests PHP 7.4 through PHP 8.5.
 ServSys uses custom relational WordPress tables for operational data and WordPress users, authentication, roles, capabilities, mail, media, and REST infrastructure.
 
 Legacy synchronization fields and mechanisms such as `servsync`, laptop database replication, and server upload/download actions are intentionally not part of the new architecture. Modern offline/PWA support may be designed separately in a future release.
+
+
+## Phase 5 foundation
+
+The current `develop` branch includes the first functional ServSys foundation:
+
+- Versioned database installation using the WordPress table prefix and `dbDelta()`
+- Customer, site, and customer-note tables with legacy migration identifiers
+- Customer and site repository/service layers
+- WordPress administrator capabilities for ServSys customer access
+- **ServSys → Customers** administration workspace with search, create/edit, activation state, multiple sites, and notes
+- Initial authenticated REST namespace at `/servsys/v1/customers`
+- Unit coverage for schema prefixing/relationships and capabilities
+
+Equipment, service calls, inspections, agreements, pricing, legacy-data import, and offline synchronization remain outside Phase 5.
