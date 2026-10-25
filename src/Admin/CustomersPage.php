@@ -94,12 +94,19 @@ final class CustomersPage {
 			return;
 		}
 
-		$sites = ( new SiteRepository() )->for_customer( $customer_id, true );
+		$site_repository = new SiteRepository();
+		$sites           = $site_repository->for_customer( $customer_id, true );
+		$edit_site_id    = isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0;
+		$edit_site       = $edit_site_id ? $site_repository->find( $edit_site_id ) : null;
+		if ( $edit_site && (int) $edit_site['customer_id'] !== $customer_id ) {
+			$edit_site = null;
+		}
 		echo '<hr><h2>Sites</h2>';
 		foreach ( $sites as $site ) {
-			echo '<p><strong>' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</strong> — ' . esc_html( $site['address1'] . ', ' . $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ) . ( $site['active'] ? '' : ' (Inactive)' ) . '</p>';
+			$site_url = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
+			echo '<p><strong>' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</strong> — ' . esc_html( $site['address1'] . ', ' . $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ) . ( $site['active'] ? '' : ' (Inactive)' ) . ' <a href="' . esc_url( $site_url ) . '">Edit</a></p>';
 		}
-		$this->render_site_form( $customer_id );
+		$this->render_site_form( $customer_id, $edit_site );
 
 		echo '<hr><h2>Notes</h2>';
 		foreach ( ( new NoteRepository() )->for_customer( $customer_id ) as $note ) {
@@ -108,15 +115,18 @@ final class CustomersPage {
 		$this->render_note_form( $customer_id, $sites );
 	}
 
-	private function render_site_form( int $customer_id ): void {
-		echo '<h3>Add Site</h3><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	private function render_site_form( int $customer_id, $site = null ): void {
+		$site    = $site ?: array_fill_keys( array( 'id', 'name', 'address1', 'address2', 'city', 'state', 'postal_code', 'phone' ), '' );
+		$editing = ! empty( $site['id'] );
+		$active  = isset( $site['active'] ) ? (int) $site['active'] : 1;
+		echo '<h3>' . ( $editing ? 'Edit Site' : 'Add Site' ) . '</h3><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_site_' . $customer_id );
-		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . $customer_id . '">';
+		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . $customer_id . '"><input type="hidden" name="site_id" value="' . (int) $site['id'] . '">';
 		foreach ( array( 'name' => 'Site Name', 'address1' => 'Address', 'address2' => 'Address 2', 'city' => 'City', 'state' => 'State', 'postal_code' => 'Postal Code', 'phone' => 'Phone' ) as $name => $label ) {
-			$this->input( $name, $label, '', in_array( $name, array( 'address1', 'city', 'state', 'postal_code' ), true ) );
+			$this->input( $name, $label, $site[ $name ], in_array( $name, array( 'address1', 'city', 'state', 'postal_code' ), true ) );
 		}
-		echo '<p><label><input type="checkbox" name="active" value="1" checked> Active</label></p>';
-		submit_button( 'Add Site', 'secondary' );
+		echo '<p><label><input type="checkbox" name="active" value="1" ' . checked( $active, 1, false ) . '> Active</label></p>';
+		submit_button( $editing ? 'Save Site' : 'Add Site', 'secondary' );
 		echo '</form>';
 	}
 
@@ -159,7 +169,8 @@ final class CustomersPage {
 		}
 		$data = wp_unslash( $_POST );
 		$data['active'] = isset( $_POST['active'] );
-		( new SiteService() )->save( $customer_id, $data );
+		$site_id = isset( $_POST['site_id'] ) ? absint( $_POST['site_id'] ) : 0;
+		( new SiteService() )->save( $customer_id, $data, $site_id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id ) );
 		exit;
 	}
