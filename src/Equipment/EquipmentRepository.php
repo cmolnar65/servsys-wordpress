@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Equipment;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Equipment;
 
 final class EquipmentRepository {
 	private $wpdb;
