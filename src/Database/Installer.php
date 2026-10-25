@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Database;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Database;
 
 use ServSys\Customers\CustomerTypeRepository;
 use ServSys\Equipment\EquipmentTypeRepository;
