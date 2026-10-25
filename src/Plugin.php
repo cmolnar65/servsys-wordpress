@@ -3,6 +3,7 @@
 namespace ServSys;
 
 use ServSys\Admin\CustomersPage;
+use ServSys\Admin\EquipmentPage;
 use ServSys\Database\Installer;
 use ServSys\REST\CustomersController;
 
@@ -24,6 +25,7 @@ final class Plugin {
 
 		if ( is_admin() ) {
 			( new CustomersPage() )->register();
+			( new EquipmentPage() )->register();
 		}
 
 		add_action(

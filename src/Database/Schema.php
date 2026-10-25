@@ -85,6 +85,34 @@ final class Schema {
 				KEY site_id (site_id),
 				KEY note_date (note_date)
 			) {$charset};",
+			"{$wpdb->prefix}servsys_equipment" => "CREATE TABLE {$wpdb->prefix}servsys_equipment (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				customer_id bigint(20) unsigned NOT NULL,
+				site_id bigint(20) unsigned NOT NULL,
+				legacy_enum bigint(20) unsigned NULL,
+				legacy_custsite varchar(100) NULL,
+				legacy_sitenum varchar(100) NULL,
+				equipment_type varchar(100) NOT NULL,
+				brand varchar(100) NULL,
+				model_number varchar(100) NULL,
+				serial_number varchar(100) NULL,
+				filter varchar(100) NULL,
+				seer varchar(50) NULL,
+				btu_output varchar(50) NULL,
+				notes longtext NULL,
+				active tinyint(1) NOT NULL DEFAULT 1,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY legacy_enum (legacy_enum),
+				KEY customer_id (customer_id),
+				KEY site_id (site_id),
+				KEY equipment_type (equipment_type),
+				KEY serial_number (serial_number),
+				KEY active (active)
+			) {$charset};",
 		);
 	}
 }
