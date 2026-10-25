@@ -1,0 +1,21 @@
+{
+  "name": "cmolnar65/servsys-wordpress",
+  "description": "WordPress-based replacement for the ServSys field service management system",
+  "type": "wordpress-plugin",
+  "license": "proprietary",
+  "require": {
+    "php": ">=7.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "ServSys\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "lint": "find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l"
+  }
+}
