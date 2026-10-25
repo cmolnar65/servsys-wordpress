@@ -154,7 +154,7 @@ final class CustomersPage {
 		echo '<h2>' . ( $customer_id ? 'Edit ' . esc_html( $customer['name'] ) : 'Add Customer' ) . '</h2>';
 		echo '<form id="servsys-customer-form" data-existing-customer="' . ( $customer_id ? '1' : '0' ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_customer_' . $customer_id );
-		echo '<input type="hidden" name="action" value="servsys_save_customer"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">'';
+		echo '<input type="hidden" name="action" value="servsys_save_customer"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">';
 		$this->input( 'name', 'Name', $customer['name'], true );
 		$this->customer_type_select( isset( $customer['customer_type_id'] ) ? (int) $customer['customer_type_id'] : 0 );
 		$this->input( 'primary_phone', 'Primary Phone', $customer['primary_phone'] );
