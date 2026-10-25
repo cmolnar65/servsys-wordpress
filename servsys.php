@@ -23,6 +23,10 @@ if ( file_exists( $servsys_autoload ) ) {
 	require_once $servsys_autoload;
 }
 
+if ( class_exists( '\\ServSys\\Database\\Installer' ) ) {
+	register_activation_hook( __FILE__, array( '\\ServSys\\Database\\Installer', 'activate' ) );
+}
+
 if ( class_exists( '\\ServSys\\Plugin' ) ) {
 	\ServSys\Plugin::instance()->register_hooks();
 }
