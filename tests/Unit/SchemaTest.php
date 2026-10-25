@@ -16,6 +16,7 @@ final class SchemaTest extends TestCase {
 
 		$this->assertSame(
 			array(
+				'test_servsys_customer_types',
 				'test_servsys_customers',
 				'test_servsys_sites',
 				'test_servsys_customer_notes',
@@ -24,7 +25,7 @@ final class SchemaTest extends TestCase {
 		);
 	}
 
-	public function test_schema_contains_customer_site_relationship_and_legacy_ids(): void {
+	public function test_schema_contains_customer_type_and_site_relationships_and_legacy_ids(): void {
 		$wpdb = new class {
 			public $prefix = 'wp_';
 			public function get_charset_collate(): string {
@@ -34,6 +35,8 @@ final class SchemaTest extends TestCase {
 
 		$tables = Schema::tables( $wpdb );
 
+		$this->assertStringContainsString( 'slug varchar(100) NOT NULL', $tables['wp_servsys_customer_types'] );
+		$this->assertStringContainsString( 'customer_type_id bigint(20) unsigned NULL', $tables['wp_servsys_customers'] );
 		$this->assertStringContainsString( 'legacy_custnum', $tables['wp_servsys_customers'] );
 		$this->assertStringContainsString( 'customer_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_sites'] );
 		$this->assertStringContainsString( 'legacy_notenum', $tables['wp_servsys_customer_notes'] );

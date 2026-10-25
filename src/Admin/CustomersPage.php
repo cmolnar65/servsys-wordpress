@@ -4,6 +4,7 @@ namespace ServSys\Admin;
 
 use ServSys\Customers\CustomerRepository;
 use ServSys\Customers\CustomerService;
+use ServSys\Customers\CustomerTypeRepository;
 use ServSys\Customers\NoteRepository;
 use ServSys\Customers\NoteService;
 use ServSys\Sites\SiteRepository;
@@ -13,14 +14,24 @@ use ServSys\Users\Capabilities;
 final class CustomersPage {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_post_servsys_save_customer', array( $this, 'save_customer' ) );
 		add_action( 'admin_post_servsys_save_site', array( $this, 'save_site' ) );
 		add_action( 'admin_post_servsys_add_note', array( $this, 'add_note' ) );
+		add_action( 'admin_post_servsys_save_customer_type', array( $this, 'save_customer_type' ) );
 	}
 
 	public function register_menu(): void {
 		add_menu_page( 'ServSys', 'ServSys', Capabilities::ACCESS, 'servsys', array( $this, 'render' ), 'dashicons-admin-tools', 26 );
 		add_submenu_page( 'servsys', 'Customers', 'Customers', Capabilities::VIEW_CUSTOMERS, 'servsys', array( $this, 'render' ) );
+		add_submenu_page( 'servsys', 'Customer Types', 'Customer Types', Capabilities::EDIT_CUSTOMERS, 'servsys-customer-types', array( $this, 'render_customer_types' ) );
+	}
+
+	public function enqueue_assets( string $hook ): void {
+		if ( false === strpos( $hook, 'servsys' ) ) {
+			return;
+		}
+		wp_enqueue_script( 'servsys-admin-customers', plugins_url( 'assets/admin-customers.js', SERVSYS_PLUGIN_FILE ), array(), SERVSYS_VERSION, true );
 	}
 
 	public function render(): void {
@@ -32,22 +43,23 @@ final class CustomersPage {
 		$edit        = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
 
 		echo '<div class="wrap"><h1>ServSys Customers</h1>';
-
 		if ( $customer_id || $edit ) {
 			$this->render_customer( $customer_id );
 		} else {
 			$this->render_list();
 		}
-
 		echo '</div>';
 	}
 
 	private function render_list(): void {
 		$term      = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$customers = ( new CustomerRepository() )->search( $term, true );
+		$clear_url = admin_url( 'admin.php?page=servsys' );
 
 		echo '<form method="get"><input type="hidden" name="page" value="servsys">';
-		echo '<p class="search-box"><input type="search" name="s" value="' . esc_attr( $term ) . '"> ';
+		echo '<p class="search-box">';
+		echo '<a class="button" href="' . esc_url( $clear_url ) . '" title="Clear customer search" aria-label="Clear customer search"><span class="dashicons dashicons-dismiss" style="vertical-align:middle"></span></a> ';
+		echo '<input type="search" name="s" value="' . esc_attr( $term ) . '"> ';
 		submit_button( 'Search Customers', 'secondary', '', false );
 		echo '</p></form>';
 
@@ -72,20 +84,22 @@ final class CustomersPage {
 		if ( $customer_id && ! $customer ) {
 			wp_die( esc_html__( 'Customer not found.', 'servsys' ) );
 		}
-
 		if ( ! current_user_can( $customer_id ? Capabilities::EDIT_CUSTOMERS : Capabilities::CREATE_CUSTOMERS ) ) {
 			wp_die( esc_html__( 'You do not have permission to edit this customer.', 'servsys' ) );
 		}
 
-		$customer = $customer ?: array_fill_keys( array( 'name', 'customer_type', 'primary_phone', 'alternate_phone', 'email', 'notes' ), '' );
+		$list_url = admin_url( 'admin.php?page=servsys' );
+		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
+
+		$customer = $customer ?: array_fill_keys( array( 'name', 'customer_type', 'customer_type_id', 'primary_phone', 'alternate_phone', 'email', 'notes' ), '' );
 		$customer['active'] = isset( $customer['active'] ) ? $customer['active'] : 1;
 
 		echo '<h2>' . ( $customer_id ? esc_html( $customer['name'] ) : 'Add Customer' ) . '</h2>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<form id="servsys-customer-form" data-existing-customer="' . ( $customer_id ? '1' : '0' ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_customer_' . $customer_id );
 		echo '<input type="hidden" name="action" value="servsys_save_customer"><input type="hidden" name="customer_id" value="' . $customer_id . '">';
 		$this->input( 'name', 'Name', $customer['name'], true );
-		$this->input( 'customer_type', 'Customer Type', $customer['customer_type'] );
+		$this->customer_type_select( isset( $customer['customer_type_id'] ) ? (int) $customer['customer_type_id'] : 0 );
 		$this->input( 'primary_phone', 'Primary Phone', $customer['primary_phone'] );
 		$this->input( 'alternate_phone', 'Alternate Phone', $customer['alternate_phone'] );
 		$this->input( 'email', 'Email', $customer['email'], false, 'email' );
@@ -95,8 +109,12 @@ final class CustomersPage {
 		echo '</form>';
 
 		if ( ! $customer_id ) {
+			echo '<div class="notice notice-info inline"><p>Save the customer before adding sites or notes.</p></div>';
+			echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
 			return;
 		}
+
+		echo '<div id="servsys-save-first-notice" class="notice notice-warning inline" hidden><p><strong>Unsaved customer changes.</strong> Save Customer before adding or editing sites or adding notes.</p></div>';
 
 		$site_repository = new SiteRepository();
 		$sites           = $site_repository->for_customer( $customer_id, true );
@@ -105,25 +123,63 @@ final class CustomersPage {
 		if ( $edit_site && (int) $edit_site['customer_id'] !== $customer_id ) {
 			$edit_site = null;
 		}
+
 		echo '<hr><h2>Sites</h2>';
-		foreach ( $sites as $site ) {
-			$site_url = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
-			echo '<p><strong>' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</strong> — ' . esc_html( $site['address1'] . ', ' . $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ) . ( $site['active'] ? '' : ' (Inactive)' ) . ' <a href="' . esc_url( $site_url ) . '">Edit</a></p>';
-		}
+		$this->render_sites_table( $customer_id, $sites );
 		$this->render_site_form( $customer_id, $edit_site );
 
 		echo '<hr><h2>Notes</h2>';
+		$site_names = array();
+		foreach ( $sites as $site ) {
+			$site_names[ (int) $site['id'] ] = $site['name'] ?: $site['address1'];
+		}
 		foreach ( ( new NoteRepository() )->for_customer( $customer_id ) as $note ) {
-			echo '<div class="notice notice-info inline"><p><strong>' . esc_html( $note['subject'] ?: 'Note' ) . '</strong><br>' . nl2br( esc_html( $note['note'] ) ) . '</p></div>';
+			$scope = empty( $note['site_id'] ) ? 'Customer-wide' : 'Site: ' . ( $site_names[ (int) $note['site_id'] ] ?? 'Unknown site' );
+			echo '<div class="notice notice-info inline"><p><strong>' . esc_html( $note['subject'] ?: 'Note' ) . '</strong> <em>(' . esc_html( $scope ) . ')</em><br>' . nl2br( esc_html( $note['note'] ) ) . '</p></div>';
 		}
 		$this->render_note_form( $customer_id, $sites );
+
+		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
+	}
+
+	private function customer_type_select( int $selected ): void {
+		$types = ( new CustomerTypeRepository() )->all( true );
+		echo '<p><label>Customer Type<br><select name="customer_type_id"><option value="">Select customer type</option>';
+		foreach ( $types as $type ) {
+			if ( ! $type['active'] && (int) $type['id'] !== $selected ) {
+				continue;
+			}
+			$label = $type['name'] . ( $type['active'] ? '' : ' (Inactive)' );
+			echo '<option value="' . (int) $type['id'] . '" ' . selected( $selected, (int) $type['id'], false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		echo '</select></label></p>';
+	}
+
+	private function render_sites_table( int $customer_id, array $sites ): void {
+		if ( ! $sites ) {
+			echo '<p>No sites have been added.</p>';
+			return;
+		}
+
+		echo '<table class="widefat striped"><thead><tr><th>Site</th><th>Address</th><th>City / State / ZIP</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+		foreach ( $sites as $site ) {
+			$site_url = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
+			$address  = $site['address1'] . ( $site['address2'] ? ', ' . $site['address2'] : '' );
+			echo '<tr><td><strong>' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</strong></td>';
+			echo '<td>' . esc_html( $address ) . '</td>';
+			echo '<td>' . esc_html( $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ) . '</td>';
+			echo '<td>' . esc_html( $site['phone'] ) . '</td>';
+			echo '<td>' . ( $site['active'] ? 'Active' : 'Inactive' ) . '</td>';
+			echo '<td><a class="button button-small" href="' . esc_url( $site_url ) . '">Edit</a></td></tr>';
+		}
+		echo '</tbody></table>';
 	}
 
 	private function render_site_form( int $customer_id, $site = null ): void {
 		$site    = $site ?: array_fill_keys( array( 'id', 'name', 'address1', 'address2', 'city', 'state', 'postal_code', 'phone' ), '' );
 		$editing = ! empty( $site['id'] );
 		$active  = isset( $site['active'] ) ? (int) $site['active'] : 1;
-		echo '<h3>' . ( $editing ? 'Edit Site' : 'Add Site' ) . '</h3><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<h3>' . ( $editing ? 'Edit Site' : 'Add Site' ) . '</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_site_' . $customer_id );
 		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . $customer_id . '"><input type="hidden" name="site_id" value="' . (int) $site['id'] . '">';
 		foreach ( array( 'name' => 'Site Name', 'address1' => 'Address', 'address2' => 'Address 2', 'city' => 'City', 'state' => 'State', 'postal_code' => 'Postal Code', 'phone' => 'Phone' ) as $name => $label ) {
@@ -135,7 +191,7 @@ final class CustomersPage {
 	}
 
 	private function render_note_form( int $customer_id, array $sites ): void {
-		echo '<h3>Add Note</h3><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<h3>Add Note</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_add_note_' . $customer_id );
 		echo '<input type="hidden" name="action" value="servsys_add_note"><input type="hidden" name="customer_id" value="' . $customer_id . '">';
 		$this->input( 'subject', 'Subject', '' );
@@ -152,6 +208,33 @@ final class CustomersPage {
 		echo '<p><label>' . esc_html( $label ) . '<br><input class="regular-text" type="' . esc_attr( $type ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '"' . ( $required ? ' required' : '' ) . '></label></p>';
 	}
 
+	public function render_customer_types(): void {
+		if ( ! current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
+		}
+		$types = ( new CustomerTypeRepository() )->all( true );
+		echo '<div class="wrap"><h1>ServSys Customer Types</h1><p>Configure the customer types available on customer records.</p>';
+		echo '<table class="widefat striped"><thead><tr><th>Name</th><th>Sort Order</th><th>Active</th><th>Action</th></tr></thead><tbody>';
+		foreach ( $types as $type ) {
+			echo '<tr><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			wp_nonce_field( 'servsys_save_customer_type_' . (int) $type['id'] );
+			echo '<input type="hidden" name="action" value="servsys_save_customer_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '">';
+			echo '<td><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></td>';
+			echo '<td><input type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td>';
+			echo '<td><label><input type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td>';
+			echo '<td><button class="button" type="submit">Save</button></td></form></tr>';
+		}
+		echo '</tbody></table>';
+		echo '<h2>Add Customer Type</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( 'servsys_save_customer_type_0' );
+		echo '<input type="hidden" name="action" value="servsys_save_customer_type"><input type="hidden" name="type_id" value="0">';
+		echo '<p><label>Name<br><input type="text" name="name" class="regular-text" required></label></p>';
+		echo '<p><label>Sort Order<br><input type="number" name="sort_order" value="40" class="small-text"></label></p>';
+		echo '<p><label><input type="checkbox" name="active" value="1" checked> Active</label></p>';
+		submit_button( 'Add Customer Type' );
+		echo '</form></div>';
+	}
+
 	public function save_customer(): void {
 		$id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
 		check_admin_referer( 'servsys_save_customer_' . $id );
@@ -166,7 +249,7 @@ final class CustomersPage {
 	}
 
 	public function save_site(): void {
-		$customer_id = absint( $_POST['customer_id'] );
+		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
 		check_admin_referer( 'servsys_save_site_' . $customer_id );
 		if ( ! current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
@@ -180,13 +263,26 @@ final class CustomersPage {
 	}
 
 	public function add_note(): void {
-		$customer_id = absint( $_POST['customer_id'] );
+		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
 		check_admin_referer( 'servsys_add_note_' . $customer_id );
 		if ( ! current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		( new NoteService() )->create( $customer_id, wp_unslash( $_POST ) );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id ) );
+		exit;
+	}
+
+	public function save_customer_type(): void {
+		$id = isset( $_POST['type_id'] ) ? absint( $_POST['type_id'] ) : 0;
+		check_admin_referer( 'servsys_save_customer_type_' . $id );
+		if ( ! current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
+		}
+		$data = wp_unslash( $_POST );
+		$data['active'] = isset( $_POST['active'] );
+		( new CustomerTypeRepository() )->save( $data, $id );
+		wp_safe_redirect( admin_url( 'admin.php?page=servsys-customer-types' ) );
 		exit;
 	}
 }
