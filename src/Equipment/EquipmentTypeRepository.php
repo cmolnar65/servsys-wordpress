@@ -16,10 +16,10 @@ final class EquipmentTypeRepository {
 	}
 
 	public function all( bool $include_inactive = true ): array {
-		$sql = $include_inactive
-			? $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table )
-			: $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table );
-		return $this->wpdb->get_results( $sql, ARRAY_A );
+		if ( $include_inactive ) {
+			return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
+		}
+		return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
 	}
 
 	public function find( int $id ) {
