@@ -11,6 +11,8 @@ final class CapabilitiesTest extends TestCase {
 				'servsys_view_customers',
 				'servsys_create_customers',
 				'servsys_edit_customers',
+				'servsys_create_sites',
+				'servsys_edit_sites',
 				'servsys_view_equipment',
 				'servsys_create_equipment',
 				'servsys_edit_equipment',

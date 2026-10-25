@@ -7,6 +7,8 @@ final class Capabilities {
 	const VIEW_CUSTOMERS = 'servsys_view_customers';
 	const CREATE_CUSTOMERS = 'servsys_create_customers';
 	const EDIT_CUSTOMERS = 'servsys_edit_customers';
+	const CREATE_SITES = 'servsys_create_sites';
+	const EDIT_SITES = 'servsys_edit_sites';
 	const VIEW_EQUIPMENT = 'servsys_view_equipment';
 	const CREATE_EQUIPMENT = 'servsys_create_equipment';
 	const EDIT_EQUIPMENT = 'servsys_edit_equipment';
@@ -29,6 +31,8 @@ final class Capabilities {
 			self::VIEW_CUSTOMERS,
 			self::CREATE_CUSTOMERS,
 			self::EDIT_CUSTOMERS,
+			self::CREATE_SITES,
+			self::EDIT_SITES,
 			self::VIEW_EQUIPMENT,
 			self::CREATE_EQUIPMENT,
 			self::EDIT_EQUIPMENT,
