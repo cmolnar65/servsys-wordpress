@@ -45,7 +45,9 @@ final class CustomersPage {
 		$edit        = 'edit' === $action;
 
 		echo '<div class="wrap"><h1>ServSys Customers</h1>';
-		if ( 'edit-site' === $action && $customer_id ) {
+		if ( 'view-site' === $action && $customer_id ) {
+			$this->render_site_view( $customer_id, isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0 );
+		} elseif ( 'edit-site' === $action && $customer_id ) {
 			$this->render_customer_view( $customer_id );
 		} elseif ( $edit ) {
 			$this->render_customer_edit( $customer_id );
@@ -184,9 +186,10 @@ final class CustomersPage {
 
 		echo '<table class="widefat striped"><thead><tr><th>Site</th><th>Address</th><th>City / State / ZIP</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
 		foreach ( $sites as $site ) {
+			$site_view_url = admin_url( 'admin.php?page=servsys&action=view-site&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
 			$site_url = admin_url( 'admin.php?page=servsys&action=edit-site&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
 			$address  = $site['address1'] . ( $site['address2'] ? ', ' . $site['address2'] : '' );
-			echo '<tr><td><strong>' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</strong></td>';
+			echo '<tr><td><strong><a href="' . esc_url( $site_view_url ) . '">' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</a></strong></td>';
 			echo '<td>' . esc_html( $address ) . '</td>';
 			echo '<td>' . esc_html( $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ) . '</td>';
 			echo '<td>' . esc_html( $site['phone'] ) . '</td>';
@@ -211,6 +214,56 @@ final class CustomersPage {
 			}
 		}
 		echo '</tbody></table>';
+	}
+
+	private function render_site_view( int $customer_id, int $site_id ): void {
+		$customer = ( new CustomerRepository() )->find( $customer_id );
+		$site = ( new SiteRepository() )->find( $site_id );
+		if ( ! $customer || ! $site || (int) $site['customer_id'] !== $customer_id ) {
+			wp_die( esc_html__( 'Site not found for this customer.', 'servsys' ) );
+		}
+
+		$customer_url = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id );
+		echo '<p><a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer</a>';
+		if ( current_user_can( Capabilities::EDIT_SITES ) ) {
+			echo ' <a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys&action=edit-site&customer_id=' . $customer_id . '&site_id=' . $site_id ) ) . '">Edit Site</a>';
+		}
+		if ( current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
+			echo ' <a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&customer_id=' . $customer_id . '&site_id=' . $site_id ) ) . '">Add Equipment</a>';
+		}
+		echo '</p><h2>' . esc_html( $site['name'] ?: $site['address1'] ) . '</h2>';
+		echo '<p><strong>Customer:</strong> <a href="' . esc_url( $customer_url ) . '">' . esc_html( $customer['name'] ) . '</a></p>';
+		echo '<table class="widefat striped" style="max-width:900px"><tbody>';
+		foreach ( array(
+			'Address' => trim( $site['address1'] . ( $site['address2'] ? ', ' . $site['address2'] : '' ) ),
+			'City / State / ZIP' => trim( $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ),
+			'Phone' => $site['phone'],
+			'Status' => ( $site['active'] ? 'Active' : 'Inactive' ),
+			'Notes' => $site['notes'],
+		) as $label => $value ) {
+			echo '<tr><th style="width:180px">' . esc_html( $label ) . '</th><td>' . nl2br( esc_html( $value ) ) . '</td></tr>';
+		}
+		echo '</tbody></table>';
+
+		echo '<hr><h2>Equipment</h2>';
+		$equipment = ( new EquipmentRepository() )->for_site( $site_id, true );
+		if ( ! $equipment ) {
+			echo '<p>No equipment has been added to this site.</p>';
+		} else {
+			echo '<table class="widefat striped"><thead><tr><th>Type</th><th>Brand / Model</th><th>Serial</th><th>Filter</th><th>Refrigerant</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+			foreach ( $equipment as $item ) {
+				echo '<tr><td>' . esc_html( $item['equipment_type'] ) . '</td><td>' . esc_html( trim( $item['brand'] . ' ' . $item['model_number'] ) ) . '</td><td>' . esc_html( $item['serial_number'] ) . '</td><td>' . esc_html( $item['filter'] ) . '</td><td>' . esc_html( $item['refrigerant_type'] ) . '</td><td>' . ( $item['active'] ? 'Active' : 'Inactive' ) . '</td><td>';
+				if ( current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
+					$item_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&equipment_id=' . (int) $item['id'] . '&customer_id=' . $customer_id . '&site_id=' . $site_id );
+					echo '<a class="button button-small" href="' . esc_url( $item_url ) . '">Edit</a>';
+				}
+				echo '</td></tr>';
+			}
+			echo '</tbody></table>';
+		}
+
+		echo '<hr><h2>Site Activity</h2><p>No site activity modules are available yet. Future service calls, inspections, agreements, and other site activity will be shown here.</p>';
+		echo '<p><a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer</a></p>';
 	}
 
 	private function render_site_form( int $customer_id, $site = null ): void {
