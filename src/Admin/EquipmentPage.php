@@ -106,7 +106,7 @@ final class EquipmentPage {
 		echo '<h2>' . ( $equipment_id ? 'Edit Equipment' : 'Add Equipment' ) . '</h2>';
 		echo '<p><strong>Customer:</strong> ' . esc_html( $customer['name'] ) . '<br><strong>Site:</strong> ' . esc_html( $site['name'] ?: $site['address1'] ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		wp_nonce_field( 'servsys_save_equipment );
+		wp_nonce_field( 'servsys_save_equipment' );
 		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . esc_attr( (string) $equipment_id ) . '"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . esc_attr( (string) $site_id ) . '"><input type="hidden" name="source" value="' . esc_attr( $source ) . '">';
 		$this->equipment_type_select( isset( $item['equipment_type_id'] ) ? (int) $item['equipment_type_id'] : 0 );
 		$this->input( 'brand', 'Brand', $item['brand'] );
@@ -153,7 +153,7 @@ final class EquipmentPage {
 		foreach ( $types as $type ) {
 			$form_id = 'servsys-equipment-type-' . (int) $type['id'];
 			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			wp_nonce_field( 'servsys_save_equipment_type );
+			wp_nonce_field( 'servsys_save_equipment_type' );
 			echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '"><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
 			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td><td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td><td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
 		}
