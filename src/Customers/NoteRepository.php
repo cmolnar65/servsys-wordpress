@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Customers;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Customers;
 
 final class NoteRepository {
 	private $wpdb;
