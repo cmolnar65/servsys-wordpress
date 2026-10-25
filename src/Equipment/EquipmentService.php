@@ -42,6 +42,7 @@ final class EquipmentService {
 			'model_number'   => isset( $input['model_number'] ) ? sanitize_text_field( $input['model_number'] ) : null,
 			'serial_number'  => isset( $input['serial_number'] ) ? sanitize_text_field( $input['serial_number'] ) : null,
 			'filter'         => isset( $input['filter'] ) ? sanitize_text_field( $input['filter'] ) : null,
+			'refrigerant_type' => isset( $input['refrigerant_type'] ) ? sanitize_text_field( $input['refrigerant_type'] ) : null,
 			'seer'           => isset( $input['seer'] ) ? sanitize_text_field( $input['seer'] ) : null,
 			'btu_output'     => isset( $input['btu_output'] ) ? sanitize_text_field( $input['btu_output'] ) : null,
 			'notes'          => isset( $input['notes'] ) ? sanitize_textarea_field( $input['notes'] ) : null,
