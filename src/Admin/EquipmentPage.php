@@ -140,7 +140,12 @@ final class EquipmentPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$types = ( new EquipmentTypeRepository() )->all( true );
-		echo '<div class="wrap"><h1>ServSys Equipment Types</h1><p>Configure the equipment types available on equipment records.</p><table class="widefat striped"><thead><tr><th>Name</th><th>Sort Order</th><th>Active</th><th>Action</th></tr></thead><tbody>';
+		$error = isset( $_GET['servsys_error'] ) ? sanitize_text_field( wp_unslash( $_GET['servsys_error'] ) ) : '';
+		echo '<div class="wrap"><h1>ServSys Equipment Types</h1>';
+		if ( $error ) {
+			echo '<div class="notice notice-error inline"><p>' . esc_html( $error ) . '</p></div>';
+		}
+		echo '<p>Configure the equipment types available on equipment records.</p><table class="widefat striped"><thead><tr><th>Name</th><th>Sort Order</th><th>Active</th><th>Action</th></tr></thead><tbody>';
 		foreach ( $types as $type ) {
 			$form_id = 'servsys-equipment-type-' . (int) $type['id'];
 			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -163,8 +168,13 @@ final class EquipmentPage {
 		}
 		$data = wp_unslash( $_POST );
 		$data['active'] = isset( $_POST['active'] );
-		( new EquipmentTypeRepository() )->save( $data, $id );
-		wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment-types' ) );
+		try {
+			( new EquipmentTypeRepository() )->save( $data, $id );
+			$url = admin_url( 'admin.php?page=servsys-equipment-types' );
+		} catch ( \InvalidArgumentException $exception ) {
+			$url = add_query_arg( 'servsys_error', $exception->getMessage(), admin_url( 'admin.php?page=servsys-equipment-types' ) );
+		}
+		wp_safe_redirect( $url );
 		exit;
 	}
 
