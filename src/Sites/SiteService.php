@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Sites;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Sites;
 
 final class SiteService {
 	private $repository;
