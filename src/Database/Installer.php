@@ -50,7 +50,7 @@ final class Installer {
 
 		foreach ( array( 'Residential', 'Commercial', 'Agricultural' ) as $order => $name ) {
 			$slug = sanitize_title( $name );
-			$id   = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s", $slug ) );
+			$id   = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $table, $slug ) );
 			if ( ! $id ) {
 				$wpdb->insert(
 					$table,
@@ -73,7 +73,7 @@ final class Installer {
 		$names = array( 'Air Conditioner', 'Air Handler', 'Boiler', 'Furnace', 'Heat Pump', 'Mini-Split', 'Package Unit', 'Water Heater', 'Other' );
 		foreach ( $names as $order => $name ) {
 			$slug = sanitize_title( $name );
-			if ( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s", $slug ) ) ) {
+			if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $table, $slug ) ) ) {
 				$wpdb->insert( $table, array( 'name' => $name, 'slug' => $slug, 'sort_order' => ( $order + 1 ) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
 			}
 		}
@@ -83,11 +83,11 @@ final class Installer {
 		$equipment = $wpdb->prefix . 'servsys_equipment';
 		$types = $wpdb->prefix . 'servsys_equipment_types';
 		$now = current_time( 'mysql', true );
-		$names = $wpdb->get_col( "SELECT DISTINCT TRIM(equipment_type) FROM {$equipment} WHERE equipment_type IS NOT NULL AND TRIM(equipment_type) <> ''" );
+		$names = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT TRIM(equipment_type) FROM %i WHERE equipment_type IS NOT NULL AND TRIM(equipment_type) <> ''", $equipment ) );
 		foreach ( $names as $name ) {
-			if ( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE LOWER(name) = LOWER(%s)", $name ) ) ) {
+			if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE LOWER(name) = LOWER(%s)', $types, $name ) ) ) {
 				$slug = sanitize_title( $name );
-				if ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE slug = %s", $slug ) ) ) {
+				if ( $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $types, $slug ) ) ) {
 					$slug .= '-' . substr( md5( $name ), 0, 8 );
 				}
 				$wpdb->insert( $types, array( 'name' => $name, 'slug' => $slug, 'sort_order' => 100, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
@@ -99,10 +99,10 @@ final class Installer {
 		$equipment = $wpdb->prefix . 'servsys_equipment';
 		$types = $wpdb->prefix . 'servsys_equipment_types';
 		$groups = $wpdb->get_results(
-			"SELECT LOWER(TRIM(name)) AS normalized_name, GROUP_CONCAT(id ORDER BY active DESC, id ASC) AS ids, COUNT(*) AS type_count
-			FROM {$types}
-			GROUP BY LOWER(TRIM(name))
-			HAVING type_count > 1",
+			$wpdb->prepare(
+				'SELECT LOWER(TRIM(name)) AS normalized_name, GROUP_CONCAT(id ORDER BY active DESC, id ASC) AS ids, COUNT(*) AS type_count FROM %i GROUP BY LOWER(TRIM(name)) HAVING type_count > 1',
+				$types
+			),
 			ARRAY_A
 		);
 
@@ -122,20 +122,26 @@ final class Installer {
 	private static function migrate_equipment_types( $wpdb ): void {
 		$equipment = $wpdb->prefix . 'servsys_equipment';
 		$types = $wpdb->prefix . 'servsys_equipment_types';
-		$wpdb->query( "UPDATE {$equipment} e INNER JOIN {$types} t ON LOWER(TRIM(e.equipment_type)) = LOWER(TRIM(t.name)) SET e.equipment_type_id = t.id WHERE e.equipment_type_id IS NULL AND e.equipment_type IS NOT NULL AND e.equipment_type <> ''" );
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE %i e INNER JOIN %i t ON LOWER(TRIM(e.equipment_type)) = LOWER(TRIM(t.name)) SET e.equipment_type_id = t.id WHERE e.equipment_type_id IS NULL AND e.equipment_type IS NOT NULL AND e.equipment_type <> ''",
+				$equipment,
+				$types
+			)
+		);
 	}
 
 	private static function preserve_legacy_customer_types( $wpdb ): void {
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$types     = $wpdb->prefix . 'servsys_customer_types';
 		$now       = current_time( 'mysql', true );
-		$names     = $wpdb->get_col( "SELECT DISTINCT TRIM(customer_type) FROM {$customers} WHERE customer_type IS NOT NULL AND TRIM(customer_type) <> ''" );
+		$names     = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT TRIM(customer_type) FROM %i WHERE customer_type IS NOT NULL AND TRIM(customer_type) <> ''", $customers ) );
 
 		foreach ( $names as $name ) {
-			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE LOWER(name) = LOWER(%s)", $name ) );
+			$existing = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE LOWER(name) = LOWER(%s)', $types, $name ) );
 			if ( ! $existing ) {
 				$slug = sanitize_title( $name );
-				if ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE slug = %s", $slug ) ) ) {
+				if ( $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $types, $slug ) ) ) {
 					$slug .= '-' . substr( md5( $name ), 0, 8 );
 				}
 				$wpdb->insert(
@@ -158,10 +164,11 @@ final class Installer {
 		$types     = $wpdb->prefix . 'servsys_customer_types';
 
 		$wpdb->query(
-			"UPDATE {$customers} c
-			INNER JOIN {$types} t ON LOWER(TRIM(c.customer_type)) = LOWER(TRIM(t.name))
-			SET c.customer_type_id = t.id
-			WHERE c.customer_type_id IS NULL AND c.customer_type IS NOT NULL AND c.customer_type <> ''"
+			$wpdb->prepare(
+				"UPDATE %i c INNER JOIN %i t ON LOWER(TRIM(c.customer_type)) = LOWER(TRIM(t.name)) SET c.customer_type_id = t.id WHERE c.customer_type_id IS NULL AND c.customer_type IS NOT NULL AND c.customer_type <> ''",
+				$customers,
+				$types
+			)
 		);
 	}
 }
