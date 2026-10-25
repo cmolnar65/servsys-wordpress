@@ -56,8 +56,7 @@ rm -rf \
 rm -f \
     "${STAGE_DIR}/.gitignore" \
     "${STAGE_DIR}/build-release.sh" \
-    "${STAGE_DIR}/composer.json" \
-    "${STAGE_DIR}/composer.lock" \
+     "${STAGE_DIR}/composer.lock" \
     "${STAGE_DIR}/phpunit.xml.dist"
 
 (
@@ -73,7 +72,7 @@ if ! grep -Fx "${PLUGIN_SLUG}/servsys.php" <<< "${ZIP_ENTRIES}" >/dev/null; then
     exit 1
 fi
 
-for forbidden in ".git/" ".github/" "tests/" "build-release.sh" "composer.json" "composer.lock" "phpunit.xml.dist"; do
+for forbidden in ".git/" ".github/" "tests/" "build-release.sh" "composer.lock" "phpunit.xml.dist"; do
     if grep -F "${forbidden}" <<< "${ZIP_ENTRIES}" >/dev/null; then
         echo "ERROR: Package audit failed: forbidden path found: ${forbidden}" >&2
         rm -f "${ZIP_FILE}"
