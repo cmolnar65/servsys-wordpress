@@ -44,8 +44,10 @@ final class CustomersPage {
 		$edit        = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
 
 		echo '<div class="wrap"><h1>ServSys Customers</h1>';
-		if ( $customer_id || $edit ) {
-			$this->render_customer( $customer_id );
+		if ( $edit ) {
+			$this->render_customer_edit( $customer_id );
+		} elseif ( $customer_id ) {
+			$this->render_customer_view( $customer_id );
 		} else {
 			$this->render_list();
 		}
@@ -78,24 +80,62 @@ final class CustomersPage {
 		echo '</tbody></table>';
 	}
 
-	private function render_customer( int $customer_id ): void {
-		$repository = new CustomerRepository();
-		$customer   = $customer_id ? $repository->find( $customer_id ) : null;
+	private function render_customer_view( int $customer_id ): void {
+		$customer = ( new CustomerRepository() )->find( $customer_id );
+		if ( ! $customer ) {
+			wp_die( esc_html__( 'Customer not found.', 'servsys' ) );
+		}
 
+		$list_url = admin_url( 'admin.php?page=servsys' );
+		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a>';
+		if ( current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
+			echo ' <a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys&action=edit&customer_id=' . $customer_id ) ) . '">Edit Customer</a>';
+		}
+		echo '</p><h2>' . esc_html( $customer['name'] ) . '</h2>';
+		echo '<table class="widefat striped" style="max-width:900px"><tbody>';
+		foreach ( array( 'Customer Type' => $customer['customer_type'], 'Primary Phone' => $customer['primary_phone'], 'Alternate Phone' => $customer['alternate_phone'], 'Email' => $customer['email'], 'Status' => ( $customer['active'] ? 'Active' : 'Inactive' ) ) as $label => $value ) {
+			echo '<tr><th style="width:180px">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
+		}
+		echo '<tr><th>Notes</th><td>' . nl2br( esc_html( $customer['notes'] ) ) . '</td></tr></tbody></table>';
+
+		$sites = ( new SiteRepository() )->for_customer( $customer_id, true );
+		echo '<hr><h2>Sites &amp; Equipment</h2>';
+		$this->render_sites_table( $customer_id, $sites );
+		if ( current_user_can( Capabilities::CREATE_SITES ) ) {
+			$this->render_site_form( $customer_id );
+		}
+
+		echo '<hr><h2>Notes</h2>';
+		$site_names = array();
+		foreach ( $sites as $site ) {
+			$site_names[ (int) $site['id'] ] = $site['name'] ?: $site['address1'];
+		}
+		foreach ( ( new NoteRepository() )->for_customer( $customer_id ) as $note ) {
+			$scope = empty( $note['site_id'] ) ? 'Customer-wide' : 'Site: ' . ( $site_names[ (int) $note['site_id'] ] ?? 'Unknown site' );
+			echo '<div class="notice notice-info inline"><p><strong>' . esc_html( $note['subject'] ?: 'Note' ) . '</strong> <em>(' . esc_html( $scope ) . ')</em><br>' . nl2br( esc_html( $note['note'] ) ) . '</p></div>';
+		}
+		if ( current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
+			$this->render_note_form( $customer_id, $sites );
+		}
+		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
+	}
+
+	private function render_customer_edit( int $customer_id ): void {
+		$repository = new CustomerRepository();
+		$customer = $customer_id ? $repository->find( $customer_id ) : null;
 		if ( $customer_id && ! $customer ) {
 			wp_die( esc_html__( 'Customer not found.', 'servsys' ) );
 		}
 		if ( ! current_user_can( $customer_id ? Capabilities::EDIT_CUSTOMERS : Capabilities::CREATE_CUSTOMERS ) ) {
 			wp_die( esc_html__( 'You do not have permission to edit this customer.', 'servsys' ) );
 		}
-
 		$list_url = admin_url( 'admin.php?page=servsys' );
-		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
+		$view_url = $customer_id ? admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id ) : $list_url;
+		echo '<p><a class="button" href="' . esc_url( $view_url ) . '">&larr; ' . ( $customer_id ? 'Return to Customer' : 'Return to Customer List' ) . '</a></p>';
 
 		$customer = $customer ?: array_fill_keys( array( 'name', 'customer_type', 'customer_type_id', 'primary_phone', 'alternate_phone', 'email', 'notes' ), '' );
 		$customer['active'] = isset( $customer['active'] ) ? $customer['active'] : 1;
-
-		echo '<h2>' . ( $customer_id ? esc_html( $customer['name'] ) : 'Add Customer' ) . '</h2>';
+		echo '<h2>' . ( $customer_id ? 'Edit ' . esc_html( $customer['name'] ) : 'Add Customer' ) . '</h2>';
 		echo '<form id="servsys-customer-form" data-existing-customer="' . ( $customer_id ? '1' : '0' ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_customer_' . $customer_id );
 		echo '<input type="hidden" name="action" value="servsys_save_customer"><input type="hidden" name="customer_id" value="' . $customer_id . '">';
@@ -108,39 +148,9 @@ final class CustomersPage {
 		echo '<p><label><input type="checkbox" name="active" value="1" ' . checked( (int) $customer['active'], 1, false ) . '> Active</label></p>';
 		submit_button( $customer_id ? 'Save Customer' : 'Create Customer' );
 		echo '</form>';
-
 		if ( ! $customer_id ) {
-			echo '<div class="notice notice-info inline"><p>Save the customer before adding sites or notes.</p></div>';
-			echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
-			return;
+			echo '<div class="notice notice-info inline"><p>Save the customer before adding sites or equipment.</p></div>';
 		}
-
-		echo '<div id="servsys-save-first-notice" class="notice notice-warning inline" hidden><p><strong>Unsaved customer changes.</strong> Save Customer before adding or editing sites or adding notes.</p></div>';
-
-		$site_repository = new SiteRepository();
-		$sites           = $site_repository->for_customer( $customer_id, true );
-		$edit_site_id    = isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0;
-		$edit_site       = $edit_site_id ? $site_repository->find( $edit_site_id ) : null;
-		if ( $edit_site && (int) $edit_site['customer_id'] !== $customer_id ) {
-			$edit_site = null;
-		}
-
-		echo '<hr><h2>Sites</h2>';
-		$this->render_sites_table( $customer_id, $sites );
-		$this->render_site_form( $customer_id, $edit_site );
-
-		echo '<hr><h2>Notes</h2>';
-		$site_names = array();
-		foreach ( $sites as $site ) {
-			$site_names[ (int) $site['id'] ] = $site['name'] ?: $site['address1'];
-		}
-		foreach ( ( new NoteRepository() )->for_customer( $customer_id ) as $note ) {
-			$scope = empty( $note['site_id'] ) ? 'Customer-wide' : 'Site: ' . ( $site_names[ (int) $note['site_id'] ] ?? 'Unknown site' );
-			echo '<div class="notice notice-info inline"><p><strong>' . esc_html( $note['subject'] ?: 'Note' ) . '</strong> <em>(' . esc_html( $scope ) . ')</em><br>' . nl2br( esc_html( $note['note'] ) ) . '</p></div>';
-		}
-		$this->render_note_form( $customer_id, $sites );
-
-		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Customer List</a></p>';
 	}
 
 	private function customer_type_select( int $selected ): void {
@@ -164,7 +174,7 @@ final class CustomersPage {
 
 		echo '<table class="widefat striped"><thead><tr><th>Site</th><th>Address</th><th>City / State / ZIP</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
 		foreach ( $sites as $site ) {
-			$site_url = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
+			$site_url = admin_url( 'admin.php?page=servsys&action=edit-site&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
 			$address  = $site['address1'] . ( $site['address2'] ? ', ' . $site['address2'] : '' );
 			echo '<tr><td><strong>' . esc_html( $site['name'] ?: 'Site #' . $site['id'] ) . '</strong></td>';
 			echo '<td>' . esc_html( $address ) . '</td>';
@@ -172,7 +182,10 @@ final class CustomersPage {
 			echo '<td>' . esc_html( $site['phone'] ) . '</td>';
 			echo '<td>' . ( $site['active'] ? 'Active' : 'Inactive' ) . '</td>';
 			$equipment_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
-			echo '<td><a class="button button-small" href="' . esc_url( $site_url ) . '">Edit</a> ';
+			echo '<td>';
+			if ( current_user_can( Capabilities::EDIT_SITES ) ) {
+				echo '<a class="button button-small" href="' . esc_url( $site_url ) . '">Edit Site</a> ';
+			}
 			if ( current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
 				echo '<a class="button button-small" href="' . esc_url( $equipment_url ) . '">Add Equipment</a>';
 			}
@@ -267,12 +280,12 @@ final class CustomersPage {
 	public function save_site(): void {
 		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
 		check_admin_referer( 'servsys_save_site_' . $customer_id );
-		if ( ! current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
+		$site_id = isset( $_POST['site_id'] ) ? absint( $_POST['site_id'] ) : 0;
+		if ( ! current_user_can( $site_id ? Capabilities::EDIT_SITES : Capabilities::CREATE_SITES ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
 		$data['active'] = isset( $_POST['active'] );
-		$site_id = isset( $_POST['site_id'] ) ? absint( $_POST['site_id'] ) : 0;
 		( new SiteService() )->save( $customer_id, $data, $site_id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id ) );
 		exit;
