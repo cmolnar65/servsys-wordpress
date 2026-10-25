@@ -43,6 +43,7 @@ final class SchemaTest extends TestCase {
 		$this->assertStringContainsString( 'legacy_notenum', $tables['wp_servsys_customer_notes'] );
 		$this->assertStringContainsString( 'site_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringContainsString( 'legacy_enum bigint(20) unsigned NULL', $tables['wp_servsys_equipment'] );
+		$this->assertStringContainsString( 'refrigerant_type varchar(50) NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringNotContainsString( 'servsync', $tables['wp_servsys_equipment'] );
 	}
 }
