@@ -288,7 +288,7 @@ final class CustomersPage {
 	private function render_note_form( int $customer_id, array $sites ): void {
 		echo '<h3>Add Note</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_add_note_' . $customer_id );
-		echo '<input type="hidden" name="action" value="servsys_add_note"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">'';
+		echo '<input type="hidden" name="action" value="servsys_add_note"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">';
 		$this->input( 'subject', 'Subject', '' );
 		echo '<p><label>Site<br><select name="site_id"><option value="">Customer-wide</option>';
 		foreach ( $sites as $site ) {
