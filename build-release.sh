@@ -65,14 +65,16 @@ rm -f \
     zip -qr "$(basename "${ZIP_FILE}")" "${PLUGIN_SLUG}"
 )
 
-if ! unzip -Z1 "${ZIP_FILE}" | grep -Fxq "${PLUGIN_SLUG}/servsys.php"; then
+ZIP_ENTRIES="$(unzip -Z1 "${ZIP_FILE}")"
+
+if ! grep -Fx "${PLUGIN_SLUG}/servsys.php" <<< "${ZIP_ENTRIES}" >/dev/null; then
     echo "ERROR: Package audit failed: servsys.php is missing." >&2
     rm -f "${ZIP_FILE}"
     exit 1
 fi
 
 for forbidden in ".git/" ".github/" "tests/" "build-release.sh" "composer.json" "composer.lock" "phpunit.xml.dist"; do
-    if unzip -Z1 "${ZIP_FILE}" | grep -Fq "${forbidden}"; then
+    if grep -F "${forbidden}" <<< "${ZIP_ENTRIES}" >/dev/null; then
         echo "ERROR: Package audit failed: forbidden path found: ${forbidden}" >&2
         rm -f "${ZIP_FILE}"
         exit 1
