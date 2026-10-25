@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Users;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Users;
 
 final class Capabilities {
 	const ACCESS = 'servsys_access';
