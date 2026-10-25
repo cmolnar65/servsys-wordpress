@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\Database;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\Database;
 
 final class Schema {
 	public static function tables( $wpdb ): array {
