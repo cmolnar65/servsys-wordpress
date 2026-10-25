@@ -7,6 +7,18 @@ final class Schema {
 		$charset = $wpdb->get_charset_collate();
 
 		return array(
+			"{$wpdb->prefix}servsys_equipment_types" => "CREATE TABLE {$wpdb->prefix}servsys_equipment_types (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				name varchar(100) NOT NULL,
+				slug varchar(100) NOT NULL,
+				sort_order int(11) NOT NULL DEFAULT 0,
+				active tinyint(1) NOT NULL DEFAULT 1,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY slug (slug),
+				KEY active_sort (active,sort_order)
+			) {$charset};",
 			"{$wpdb->prefix}servsys_customer_types" => "CREATE TABLE {$wpdb->prefix}servsys_customer_types (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				name varchar(100) NOT NULL,
@@ -93,6 +105,7 @@ final class Schema {
 				legacy_custsite varchar(100) NULL,
 				legacy_sitenum varchar(100) NULL,
 				equipment_type varchar(100) NOT NULL,
+				equipment_type_id bigint(20) unsigned NULL,
 				brand varchar(100) NULL,
 				model_number varchar(100) NULL,
 				serial_number varchar(100) NULL,
@@ -111,6 +124,7 @@ final class Schema {
 				KEY customer_id (customer_id),
 				KEY site_id (site_id),
 				KEY equipment_type (equipment_type),
+				KEY equipment_type_id (equipment_type_id),
 				KEY serial_number (serial_number),
 				KEY active (active)
 			) {$charset};",

@@ -3,6 +3,7 @@
 namespace ServSys\Database;
 
 use ServSys\Customers\CustomerTypeRepository;
+use ServSys\Equipment\EquipmentTypeRepository;
 
 final class Installer {
 	public static function activate(): void {
@@ -29,6 +30,9 @@ final class Installer {
 		}
 
 		self::seed_customer_types( $wpdb );
+		self::seed_equipment_types( $wpdb );
+		self::preserve_equipment_types( $wpdb );
+		self::migrate_equipment_types( $wpdb );
 		self::preserve_legacy_customer_types( $wpdb );
 		self::migrate_customer_types( $wpdb );
 
@@ -56,6 +60,40 @@ final class Installer {
 				);
 			}
 		}
+	}
+
+	private static function seed_equipment_types( $wpdb ): void {
+		$table = $wpdb->prefix . 'servsys_equipment_types';
+		$now = current_time( 'mysql', true );
+		$names = array( 'Air Conditioner', 'Air Handler', 'Boiler', 'Furnace', 'Heat Pump', 'Mini-Split', 'Package Unit', 'Water Heater', 'Other' );
+		foreach ( $names as $order => $name ) {
+			$slug = sanitize_title( $name );
+			if ( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s", $slug ) ) ) {
+				$wpdb->insert( $table, array( 'name' => $name, 'slug' => $slug, 'sort_order' => ( $order + 1 ) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
+			}
+		}
+	}
+
+	private static function preserve_equipment_types( $wpdb ): void {
+		$equipment = $wpdb->prefix . 'servsys_equipment';
+		$types = $wpdb->prefix . 'servsys_equipment_types';
+		$now = current_time( 'mysql', true );
+		$names = $wpdb->get_col( "SELECT DISTINCT TRIM(equipment_type) FROM {$equipment} WHERE equipment_type IS NOT NULL AND TRIM(equipment_type) <> ''" );
+		foreach ( $names as $name ) {
+			if ( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE LOWER(name) = LOWER(%s)", $name ) ) ) {
+				$slug = sanitize_title( $name );
+				if ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$types} WHERE slug = %s", $slug ) ) ) {
+					$slug .= '-' . substr( md5( $name ), 0, 8 );
+				}
+				$wpdb->insert( $types, array( 'name' => $name, 'slug' => $slug, 'sort_order' => 100, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
+			}
+		}
+	}
+
+	private static function migrate_equipment_types( $wpdb ): void {
+		$equipment = $wpdb->prefix . 'servsys_equipment';
+		$types = $wpdb->prefix . 'servsys_equipment_types';
+		$wpdb->query( "UPDATE {$equipment} e INNER JOIN {$types} t ON LOWER(TRIM(e.equipment_type)) = LOWER(TRIM(t.name)) SET e.equipment_type_id = t.id WHERE e.equipment_type_id IS NULL AND e.equipment_type IS NOT NULL AND e.equipment_type <> ''" );
 	}
 
 	private static function preserve_legacy_customer_types( $wpdb ): void {
