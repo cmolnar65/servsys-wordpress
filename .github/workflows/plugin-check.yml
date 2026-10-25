@@ -1,0 +1,37 @@
+name: WordPress Plugin Check
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+jobs:
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Build release package
+        run: |
+          rm -f build/servsys-*.zip
+          ./build-release.sh
+
+      - name: Run WordPress Plugin Check against packaged plugin
+        uses: swissspidy/wp-plugin-check-action@main
+        with:
+          build-dir: build/servsys
