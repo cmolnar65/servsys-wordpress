@@ -7,8 +7,7 @@ final class SiteRepository {
 	private $table;
 
 	public function __construct( $wpdb = null ) {
-		global $wpdb as $global_wpdb;
-		$this->wpdb  = $wpdb ?: $global_wpdb;
+		$this->wpdb  = $wpdb ?: $GLOBALS['wpdb'];
 		$this->table = $this->wpdb->prefix . 'servsys_sites';
 	}
 
