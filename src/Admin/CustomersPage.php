@@ -338,7 +338,7 @@ final class CustomersPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
-		$data['active'] = isset( $_POST['active'] );
+		$data['active'] = isset( $data['active'] );
 		$id = ( new CustomerService() )->save( $data, $id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys&customer_id=' . $id ) );
 		exit;
@@ -352,7 +352,7 @@ final class CustomersPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
-		$data['active'] = isset( $_POST['active'] );
+		$data['active'] = isset( $data['active'] );
 		( new SiteService() )->save( $customer_id, $data, $site_id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id ) );
 		exit;
@@ -376,7 +376,7 @@ final class CustomersPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
-		$data['active'] = isset( $_POST['active'] );
+		$data['active'] = isset( $data['active'] );
 		( new CustomerTypeRepository() )->save( $data, $id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys-customer-types' ) );
 		exit;
