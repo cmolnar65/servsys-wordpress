@@ -13,6 +13,7 @@ final class Installer {
 
 		if ( $installed < SERVSYS_DB_VERSION ) {
 			self::install_schema();
+			\ServSys\Users\Capabilities::install();
 		}
 	}
 
