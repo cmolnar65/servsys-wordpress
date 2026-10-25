@@ -75,3 +75,19 @@ The current `develop` branch includes the first functional ServSys foundation:
 - Unit coverage for schema prefixing/relationships and capabilities
 
 Equipment, service calls, inspections, agreements, pricing, legacy-data import, and offline synchronization remain outside Phase 5.
+
+
+## Phase 6 equipment management
+
+The current `develop` branch extends the customer/site foundation with equipment management:
+
+- Upgrade-safe `servsys_equipment` table linked to both customer and site
+- Legacy equipment identifiers retained for future migration while obsolete `servsync` state is intentionally excluded
+- Equipment repository/service layer with customer/site ownership validation
+- **ServSys → Equipment** searchable administration workspace
+- Customer-site equipment tables with Add/Edit Equipment workflow
+- Equipment fields for type, brand, model, serial number, filter, SEER, BTU output, notes, and active state
+- Equipment-specific WordPress capabilities
+- Unit coverage for equipment schema and capabilities
+
+Service calls and service-call/equipment relationships remain outside Phase 6.
