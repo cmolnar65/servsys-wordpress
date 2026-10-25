@@ -29,11 +29,12 @@ final class EquipmentPage {
 		$equipment_id = isset( $_GET['equipment_id'] ) ? absint( $_GET['equipment_id'] ) : 0;
 		$site_id      = isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0;
 		$customer_id  = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
+		$source       = isset( $_GET['source'] ) ? sanitize_key( wp_unslash( $_GET['source'] ) ) : '';
 		$edit         = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
 
 		echo '<div class="wrap"><h1>ServSys Equipment</h1>';
 		if ( $equipment_id || $edit ) {
-			$this->render_equipment( $equipment_id, $customer_id, $site_id );
+			$this->render_equipment( $equipment_id, $customer_id, $site_id, $source );
 		} else {
 			$this->render_list();
 		}
@@ -66,7 +67,7 @@ final class EquipmentPage {
 		echo '</tbody></table>';
 	}
 
-	private function render_equipment( int $equipment_id, int $customer_id, int $site_id ): void {
+	private function render_equipment( int $equipment_id, int $customer_id, int $site_id, string $source = '' ): void {
 		$repository = new EquipmentRepository();
 		$item       = $equipment_id ? $repository->find( $equipment_id ) : null;
 
@@ -90,15 +91,19 @@ final class EquipmentPage {
 		$item = $item ?: array_fill_keys( array( 'equipment_type', 'brand', 'model_number', 'serial_number', 'filter', 'refrigerant_type', 'seer', 'btu_output', 'notes' ), '' );
 		$item['active'] = isset( $item['active'] ) ? $item['active'] : 1;
 		$list_url       = admin_url( 'admin.php?page=servsys-equipment' );
-		$customer_url   = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id );
+		$customer_url   = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . $site_id . '#servsys-site-' . $site_id );
+		$from_site      = 'site' === $source;
 
-		echo '<p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> ';
-		echo '<a class="button" href="' . esc_url( $customer_url ) . '">Return to Customer</a></p>';
+		echo '<p>';
+		if ( ! $from_site ) {
+			echo '<a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> ';
+		}
+		echo '<a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer Site</a></p>';
 		echo '<h2>' . ( $equipment_id ? 'Edit Equipment' : 'Add Equipment' ) . '</h2>';
 		echo '<p><strong>Customer:</strong> ' . esc_html( $customer['name'] ) . '<br><strong>Site:</strong> ' . esc_html( $site['name'] ?: $site['address1'] ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_equipment_' . $equipment_id );
-		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . $equipment_id . '"><input type="hidden" name="customer_id" value="' . $customer_id . '"><input type="hidden" name="site_id" value="' . $site_id . '">';
+		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . $equipment_id . '"><input type="hidden" name="customer_id" value="' . $customer_id . '"><input type="hidden" name="site_id" value="' . $site_id . '"><input type="hidden" name="source" value="' . esc_attr( $source ) . '">';
 		$this->equipment_type_select( isset( $item['equipment_type_id'] ) ? (int) $item['equipment_type_id'] : 0 );
 		$this->input( 'brand', 'Brand', $item['brand'] );
 		$this->input( 'model_number', 'Model Number', $item['model_number'] );
@@ -110,7 +115,11 @@ final class EquipmentPage {
 		echo '<p><label>Notes<br><textarea class="large-text" rows="5" name="notes">' . esc_textarea( $item['notes'] ) . '</textarea></label></p>';
 		echo '<p><label><input type="checkbox" name="active" value="1" ' . checked( (int) $item['active'], 1, false ) . '> Active</label></p>';
 		submit_button( $equipment_id ? 'Save Equipment' : 'Add Equipment' );
-		echo '</form><p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> <a class="button" href="' . esc_url( $customer_url ) . '">Return to Customer</a></p>';
+		echo '</form><p>';
+		if ( ! $from_site ) {
+			echo '<a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> ';
+		}
+		echo '<a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer Site</a></p>';
 	}
 
 	private function equipment_type_select( int $selected ): void {
@@ -167,6 +176,7 @@ final class EquipmentPage {
 		$id          = isset( $_POST['equipment_id'] ) ? absint( $_POST['equipment_id'] ) : 0;
 		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
 		$site_id     = isset( $_POST['site_id'] ) ? absint( $_POST['site_id'] ) : 0;
+		$source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : '';
 		check_admin_referer( 'servsys_save_equipment_' . $id );
 		if ( ! current_user_can( $id ? Capabilities::EDIT_EQUIPMENT : Capabilities::CREATE_EQUIPMENT ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
@@ -174,7 +184,7 @@ final class EquipmentPage {
 		$data = wp_unslash( $_POST );
 		$data['active'] = isset( $_POST['active'] );
 		$id = ( new EquipmentService() )->save( $customer_id, $site_id, $data, $id );
-		wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment&action=edit&equipment_id=' . $id . '&customer_id=' . $customer_id . '&site_id=' . $site_id ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment&action=edit' . ( 'site' === $source ? '&source=site' : '' ) . '&equipment_id=' . $id . '&customer_id=' . $customer_id . '&site_id=' . $site_id ) );
 		exit;
 	}
 }

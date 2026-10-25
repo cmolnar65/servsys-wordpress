@@ -171,7 +171,7 @@ final class CustomersPage {
 			echo '<td>' . esc_html( $site['city'] . ', ' . $site['state'] . ' ' . $site['postal_code'] ) . '</td>';
 			echo '<td>' . esc_html( $site['phone'] ) . '</td>';
 			echo '<td>' . ( $site['active'] ? 'Active' : 'Inactive' ) . '</td>';
-			$equipment_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
+			$equipment_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
 			echo '<td><a class="button button-small" href="' . esc_url( $site_url ) . '">Edit</a> ';
 			if ( current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
 				echo '<a class="button button-small" href="' . esc_url( $equipment_url ) . '">Add Equipment</a>';
@@ -181,7 +181,7 @@ final class CustomersPage {
 			if ( $site_equipment ) {
 				echo '<tr><td colspan="6"><strong>Equipment:</strong><table class="widefat striped" style="margin-top:8px"><thead><tr><th>Type</th><th>Brand / Model</th><th>Serial</th><th>Filter</th><th>Status</th><th>Action</th></tr></thead><tbody>';
 				foreach ( $site_equipment as $item ) {
-					$item_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&equipment_id=' . (int) $item['id'] . '&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
+					$item_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&equipment_id=' . (int) $item['id'] . '&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
 					echo '<tr><td>' . esc_html( $item['equipment_type'] ) . '</td><td>' . esc_html( trim( $item['brand'] . ' ' . $item['model_number'] ) ) . '</td><td>' . esc_html( $item['serial_number'] ) . '</td><td>' . esc_html( $item['filter'] ) . '</td><td>' . ( $item['active'] ? 'Active' : 'Inactive' ) . '</td><td><a class="button button-small" href="' . esc_url( $item_url ) . '">Edit</a></td></tr>';
 				}
 				echo '</tbody></table></td></tr>';
