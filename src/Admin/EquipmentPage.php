@@ -103,7 +103,7 @@ final class EquipmentPage {
 		echo '<p><strong>Customer:</strong> ' . esc_html( $customer['name'] ) . '<br><strong>Site:</strong> ' . esc_html( $site['name'] ?: $site['address1'] ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_equipment_' . $equipment_id );
-		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . esc_attr( (string) $equipment_id ) . '"'><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"'><input type="hidden" name="site_id" value="' . esc_attr( (string) $site_id ) . '"'><input type="hidden" name="source" value="' . esc_attr( $source ) . '">';
+		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . esc_attr( (string) $equipment_id ) . '"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"'><input type="hidden" name="site_id" value="' . esc_attr( (string) $site_id ) . '"'><input type="hidden" name="source" value="' . esc_attr( $source ) . '">';
 		$this->equipment_type_select( isset( $item['equipment_type_id'] ) ? (int) $item['equipment_type_id'] : 0 );
 		$this->input( 'brand', 'Brand', $item['brand'] );
 		$this->input( 'model_number', 'Model Number', $item['model_number'] );
