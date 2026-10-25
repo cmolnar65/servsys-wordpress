@@ -32,6 +32,7 @@ final class Installer {
 		self::seed_customer_types( $wpdb );
 		self::seed_equipment_types( $wpdb );
 		self::preserve_equipment_types( $wpdb );
+		self::merge_duplicate_equipment_types( $wpdb );
 		self::migrate_equipment_types( $wpdb );
 		self::preserve_legacy_customer_types( $wpdb );
 		self::migrate_customer_types( $wpdb );
@@ -86,6 +87,30 @@ final class Installer {
 					$slug .= '-' . substr( md5( $name ), 0, 8 );
 				}
 				$wpdb->insert( $types, array( 'name' => $name, 'slug' => $slug, 'sort_order' => 100, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
+			}
+		}
+	}
+
+	private static function merge_duplicate_equipment_types( $wpdb ): void {
+		$equipment = $wpdb->prefix . 'servsys_equipment';
+		$types = $wpdb->prefix . 'servsys_equipment_types';
+		$groups = $wpdb->get_results(
+			"SELECT LOWER(TRIM(name)) AS normalized_name, GROUP_CONCAT(id ORDER BY active DESC, id ASC) AS ids, COUNT(*) AS type_count
+			FROM {$types}
+			GROUP BY LOWER(TRIM(name))
+			HAVING type_count > 1",
+			ARRAY_A
+		);
+
+		foreach ( $groups as $group ) {
+			$ids = array_values( array_filter( array_map( 'absint', explode( ',', $group['ids'] ) ) ) );
+			if ( count( $ids ) < 2 ) {
+				continue;
+			}
+			$keep_id = array_shift( $ids );
+			foreach ( $ids as $duplicate_id ) {
+				$wpdb->update( $equipment, array( 'equipment_type_id' => $keep_id ), array( 'equipment_type_id' => $duplicate_id ) );
+				$wpdb->delete( $types, array( 'id' => $duplicate_id ) );
 			}
 		}
 	}
