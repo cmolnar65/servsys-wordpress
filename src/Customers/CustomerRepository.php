@@ -13,28 +13,25 @@ final class CustomerRepository {
 
 	public function find( int $id ) {
 		return $this->wpdb->get_row(
-			$this->wpdb->prepare( "SELECT * FROM {$this->table} WHERE id = %d", $id ),
+			$this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
 		);
 	}
 
 	public function search( string $term = '', bool $include_inactive = false ): array {
-		$where = $include_inactive ? '1=1' : 'active = 1';
-
 		if ( '' !== $term ) {
-			$like  = '%' . $this->wpdb->esc_like( $term ) . '%';
-			$where .= $this->wpdb->prepare(
-				' AND (name LIKE %s OR email LIKE %s OR primary_phone LIKE %s)',
-				$like,
-				$like,
-				$like
-			);
+			$like = '%' . $this->wpdb->esc_like( $term ) . '%';
+			if ( $include_inactive ) {
+				$sql = $this->wpdb->prepare( 'SELECT * FROM %i WHERE (name LIKE %s OR email LIKE %s OR primary_phone LIKE %s) ORDER BY name ASC LIMIT 250', $this->table, $like, $like, $like );
+			} else {
+				$sql = $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 AND (name LIKE %s OR email LIKE %s OR primary_phone LIKE %s) ORDER BY name ASC LIMIT 250', $this->table, $like, $like, $like );
+			}
+		} elseif ( $include_inactive ) {
+			$sql = $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY name ASC LIMIT 250', $this->table );
+		} else {
+			$sql = $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY name ASC LIMIT 250', $this->table );
 		}
-
-		return $this->wpdb->get_results(
-			"SELECT * FROM {$this->table} WHERE {$where} ORDER BY name ASC LIMIT 250",
-			ARRAY_A
-		);
+		return $this->wpdb->get_results( $sql, ARRAY_A );
 	}
 
 	public function create( array $data ): int {
