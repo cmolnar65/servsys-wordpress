@@ -97,6 +97,7 @@ final class Schema {
 				model_number varchar(100) NULL,
 				serial_number varchar(100) NULL,
 				filter varchar(100) NULL,
+				refrigerant_type varchar(50) NULL,
 				seer varchar(50) NULL,
 				btu_output varchar(50) NULL,
 				notes longtext NULL,
