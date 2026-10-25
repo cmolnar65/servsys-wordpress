@@ -12,12 +12,14 @@ final class EquipmentTypeRepository {
 	}
 
 	public function all( bool $include_inactive = true ): array {
-		$where = $include_inactive ? '1=1' : 'active = 1';
-		return $this->wpdb->get_results( "SELECT * FROM {$this->table} WHERE {$where} ORDER BY sort_order ASC, name ASC", ARRAY_A );
+		$sql = $include_inactive
+			? $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table )
+			: $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table );
+		return $this->wpdb->get_results( $sql, ARRAY_A );
 	}
 
 	public function find( int $id ) {
-		return $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM {$this->table} WHERE id = %d", $id ), ARRAY_A );
+		return $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ), ARRAY_A );
 	}
 
 	public function save( array $input, int $id = 0 ): int {
@@ -28,7 +30,8 @@ final class EquipmentTypeRepository {
 		$slug = sanitize_title( $name );
 		$duplicate_id = $this->wpdb->get_var(
 			$this->wpdb->prepare(
-				"SELECT id FROM {$this->table} WHERE (LOWER(TRIM(name)) = LOWER(TRIM(%s)) OR slug = %s) AND id <> %d LIMIT 1",
+				'SELECT id FROM %i WHERE (LOWER(TRIM(name)) = LOWER(TRIM(%s)) OR slug = %s) AND id <> %d LIMIT 1',
+				$this->table,
 				$name,
 				$slug,
 				$id
