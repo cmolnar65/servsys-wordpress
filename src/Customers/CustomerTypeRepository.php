@@ -12,16 +12,15 @@ final class CustomerTypeRepository {
 	}
 
 	public function all( bool $include_inactive = true ): array {
-		$where = $include_inactive ? '1=1' : 'active = 1';
-		return $this->wpdb->get_results(
-			"SELECT * FROM {$this->table} WHERE {$where} ORDER BY sort_order ASC, name ASC",
-			ARRAY_A
-		);
+		$sql = $include_inactive
+			? $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table )
+			: $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table );
+		return $this->wpdb->get_results( $sql, ARRAY_A );
 	}
 
 	public function find( int $id ) {
 		return $this->wpdb->get_row(
-			$this->wpdb->prepare( "SELECT * FROM {$this->table} WHERE id = %d", $id ),
+			$this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
 		);
 	}
