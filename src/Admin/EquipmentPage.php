@@ -171,7 +171,7 @@ final class EquipmentPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
-		$data['active'] = isset( $_POST['active'] );
+		$data['active'] = isset( $data['active'] );
 		try {
 			( new EquipmentTypeRepository() )->save( $data, $id );
 			$url = admin_url( 'admin.php?page=servsys-equipment-types' );
@@ -196,7 +196,7 @@ final class EquipmentPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
-		$data['active'] = isset( $_POST['active'] );
+		$data['active'] = isset( $data['active'] );
 		$id = ( new EquipmentService() )->save( $customer_id, $site_id, $data, $id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment&action=edit' . ( 'site' === $source ? '&source=site' : '' ) . '&equipment_id=' . $id . '&customer_id=' . $customer_id . '&site_id=' . $site_id ) );
 		exit;
