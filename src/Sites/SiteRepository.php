@@ -16,10 +16,10 @@ final class SiteRepository {
 	}
 
 	public function for_customer( int $customer_id, bool $include_inactive = true ): array {
-		$sql = $include_inactive
-			? $this->wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d ORDER BY name, city, address1', $this->table, $customer_id )
-			: $this->wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d AND active = 1 ORDER BY name, city, address1', $this->table, $customer_id );
-		return $this->wpdb->get_results( $sql, ARRAY_A );
+		if ( $include_inactive ) {
+			return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
+		}
+		return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d AND active = 1 ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
 	}
 
 	public function find( int $id ) {
