@@ -12,11 +12,15 @@ use ServSys\Users\Capabilities;
 
 final class CustomersPage {
 	public function register(): void {
-		add_menu_page( 'ServSys', 'ServSys', Capabilities::ACCESS, 'servsys', array( $this, 'render' ), 'dashicons-admin-tools', 26 );
-		add_submenu_page( 'servsys', 'Customers', 'Customers', Capabilities::VIEW_CUSTOMERS, 'servsys', array( $this, 'render' ) );
+		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_servsys_save_customer', array( $this, 'save_customer' ) );
 		add_action( 'admin_post_servsys_save_site', array( $this, 'save_site' ) );
 		add_action( 'admin_post_servsys_add_note', array( $this, 'add_note' ) );
+	}
+
+	public function register_menu(): void {
+		add_menu_page( 'ServSys', 'ServSys', Capabilities::ACCESS, 'servsys', array( $this, 'render' ), 'dashicons-admin-tools', 26 );
+		add_submenu_page( 'servsys', 'Customers', 'Customers', Capabilities::VIEW_CUSTOMERS, 'servsys', array( $this, 'render' ) );
 	}
 
 	public function render(): void {
