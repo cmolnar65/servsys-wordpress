@@ -14,12 +14,20 @@ final class NoteService {
 			throw new \InvalidArgumentException( 'Customer and note text are required.' );
 		}
 
+		$site_id = ! empty( $input['site_id'] ) ? absint( $input['site_id'] ) : 0;
+		if ( $site_id ) {
+			$site = ( new \ServSys\Sites\SiteRepository() )->find( $site_id );
+			if ( ! $site || (int) $site['customer_id'] !== $customer_id ) {
+				throw new \InvalidArgumentException( 'Selected site does not belong to this customer.' );
+			}
+		}
+
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$id   = $this->repository->create(
 			array(
 				'customer_id' => $customer_id,
-				'site_id'     => ! empty( $input['site_id'] ) ? absint( $input['site_id'] ) : null,
+				'site_id'     => $site_id ?: null,
 				'subject'     => isset( $input['subject'] ) ? sanitize_text_field( $input['subject'] ) : null,
 				'note'        => sanitize_textarea_field( $input['note'] ),
 				'note_date'   => $now,
