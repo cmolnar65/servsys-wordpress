@@ -153,7 +153,7 @@ final class CustomersPage {
 		$customer['active'] = isset( $customer['active'] ) ? $customer['active'] : 1;
 		echo '<h2>' . ( $customer_id ? 'Edit ' . esc_html( $customer['name'] ) : 'Add Customer' ) . '</h2>';
 		echo '<form id="servsys-customer-form" data-existing-customer="' . ( $customer_id ? '1' : '0' ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		wp_nonce_field( 'servsys_save_customer );
+		wp_nonce_field( 'servsys_save_customer' );
 		echo '<input type="hidden" name="action" value="servsys_save_customer"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">';
 		$this->input( 'name', 'Name', $customer['name'], true );
 		$this->customer_type_select( isset( $customer['customer_type_id'] ) ? (int) $customer['customer_type_id'] : 0 );
@@ -275,7 +275,7 @@ final class CustomersPage {
 		$editing = ! empty( $site['id'] );
 		$active  = isset( $site['active'] ) ? (int) $site['active'] : 1;
 		echo '<h3>' . ( $editing ? 'Edit Site' : 'Add Site' ) . '</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		wp_nonce_field( 'servsys_save_site );
+		wp_nonce_field( 'servsys_save_site' );
 		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . (int) $site['id'] . '">';
 		foreach ( array( 'name' => 'Site Name', 'address1' => 'Address', 'address2' => 'Address 2', 'city' => 'City', 'state' => 'State', 'postal_code' => 'Postal Code', 'phone' => 'Phone' ) as $name => $label ) {
 			$this->input( $name, $label, $site[ $name ], in_array( $name, array( 'address1', 'city', 'state', 'postal_code' ), true ) );
@@ -287,7 +287,7 @@ final class CustomersPage {
 
 	private function render_note_form( int $customer_id, array $sites ): void {
 		echo '<h3>Add Note</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		wp_nonce_field( 'servsys_add_note );
+		wp_nonce_field( 'servsys_add_note' );
 		echo '<input type="hidden" name="action" value="servsys_add_note"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">';
 		$this->input( 'subject', 'Subject', '' );
 		echo '<p><label>Site<br><select name="site_id"><option value="">Customer-wide</option>';
@@ -313,7 +313,7 @@ final class CustomersPage {
 		foreach ( $types as $type ) {
 			$form_id = 'servsys-customer-type-' . (int) $type['id'];
 			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			wp_nonce_field( 'servsys_save_customer_type );
+			wp_nonce_field( 'servsys_save_customer_type' );
 			echo '<input type="hidden" name="action" value="servsys_save_customer_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '">';
 			echo '<input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
 			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td>';
@@ -345,9 +345,9 @@ final class CustomersPage {
 	}
 
 	public function save_site(): void {
-		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
-		check_admin_referer( 'servsys_save_site );
-		$site_id = isset( $_POST['site_id'] ) ? absint( $_POST['site_id'] ) : 0;
+		check_admin_referer( 'servsys_save_site' );
+		$customer_id = isset( $_POST['customer_id'] ) ? absint( wp_unslash( $_POST['customer_id'] ) ) : 0;
+		$site_id = isset( $_POST['site_id'] ) ? absint( wp_unslash( $_POST['site_id'] ) ) : 0;
 		if ( ! current_user_can( $site_id ? Capabilities::EDIT_SITES : Capabilities::CREATE_SITES ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
@@ -359,8 +359,8 @@ final class CustomersPage {
 	}
 
 	public function add_note(): void {
-		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
-		check_admin_referer( 'servsys_add_note );
+		check_admin_referer( 'servsys_add_note' );
+		$customer_id = isset( $_POST['customer_id'] ) ? absint( wp_unslash( $_POST['customer_id'] ) ) : 0;
 		if ( ! current_user_can( Capabilities::EDIT_CUSTOMERS ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
