@@ -27,10 +27,12 @@ final class EquipmentService {
 			throw new \InvalidArgumentException( 'Selected site does not belong to this customer.' );
 		}
 
-		$type = isset( $input['equipment_type'] ) ? sanitize_text_field( $input['equipment_type'] ) : '';
-		if ( '' === $type ) {
-			throw new \InvalidArgumentException( 'Equipment type is required.' );
+		$type_id = isset( $input['equipment_type_id'] ) ? absint( $input['equipment_type_id'] ) : 0;
+		$type_record = $type_id ? ( new EquipmentTypeRepository() )->find( $type_id ) : null;
+		if ( ! $type_record ) {
+			throw new \InvalidArgumentException( 'A valid equipment type is required.' );
 		}
+		$type = $type_record['name'];
 
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
@@ -38,6 +40,7 @@ final class EquipmentService {
 			'customer_id'    => $customer_id,
 			'site_id'        => $site_id,
 			'equipment_type' => $type,
+			'equipment_type_id' => $type_id,
 			'brand'          => isset( $input['brand'] ) ? sanitize_text_field( $input['brand'] ) : null,
 			'model_number'   => isset( $input['model_number'] ) ? sanitize_text_field( $input['model_number'] ) : null,
 			'serial_number'  => isset( $input['serial_number'] ) ? sanitize_text_field( $input['serial_number'] ) : null,

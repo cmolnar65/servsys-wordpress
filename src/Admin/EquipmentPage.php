@@ -5,6 +5,7 @@ namespace ServSys\Admin;
 use ServSys\Customers\CustomerRepository;
 use ServSys\Equipment\EquipmentRepository;
 use ServSys\Equipment\EquipmentService;
+use ServSys\Equipment\EquipmentTypeRepository;
 use ServSys\Sites\SiteRepository;
 use ServSys\Users\Capabilities;
 
@@ -12,10 +13,12 @@ final class EquipmentPage {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_servsys_save_equipment', array( $this, 'save_equipment' ) );
+		add_action( 'admin_post_servsys_save_equipment_type', array( $this, 'save_equipment_type' ) );
 	}
 
 	public function register_menu(): void {
 		add_submenu_page( 'servsys', 'Equipment', 'Equipment', Capabilities::VIEW_EQUIPMENT, 'servsys-equipment', array( $this, 'render' ) );
+		add_submenu_page( 'servsys', 'Equipment Types', 'Equipment Types', Capabilities::EDIT_EQUIPMENT, 'servsys-equipment-types', array( $this, 'render_equipment_types' ) );
 	}
 
 	public function render(): void {
@@ -96,7 +99,7 @@ final class EquipmentPage {
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_equipment_' . $equipment_id );
 		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . $equipment_id . '"><input type="hidden" name="customer_id" value="' . $customer_id . '"><input type="hidden" name="site_id" value="' . $site_id . '">';
-		$this->input( 'equipment_type', 'Equipment Type', $item['equipment_type'], true );
+		$this->equipment_type_select( isset( $item['equipment_type_id'] ) ? (int) $item['equipment_type_id'] : 0 );
 		$this->input( 'brand', 'Brand', $item['brand'] );
 		$this->input( 'model_number', 'Model Number', $item['model_number'] );
 		$this->input( 'serial_number', 'Serial Number', $item['serial_number'] );
@@ -108,6 +111,52 @@ final class EquipmentPage {
 		echo '<p><label><input type="checkbox" name="active" value="1" ' . checked( (int) $item['active'], 1, false ) . '> Active</label></p>';
 		submit_button( $equipment_id ? 'Save Equipment' : 'Add Equipment' );
 		echo '</form><p><a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> <a class="button" href="' . esc_url( $customer_url ) . '">Return to Customer</a></p>';
+	}
+
+	private function equipment_type_select( int $selected ): void {
+		$types = ( new EquipmentTypeRepository() )->all( true );
+		echo '<p><label>Equipment Type<br><select name="equipment_type_id" required><option value="">Select equipment type</option>';
+		foreach ( $types as $type ) {
+			if ( ! $type['active'] && (int) $type['id'] !== $selected ) {
+				continue;
+			}
+			$label = $type['name'] . ( $type['active'] ? '' : ' (Inactive)' );
+			echo '<option value="' . (int) $type['id'] . '" ' . selected( $selected, (int) $type['id'], false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		echo '</select></label></p>';
+	}
+
+	public function render_equipment_types(): void {
+		if ( ! current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
+		}
+		$types = ( new EquipmentTypeRepository() )->all( true );
+		echo '<div class="wrap"><h1>ServSys Equipment Types</h1><p>Configure the equipment types available on equipment records.</p><table class="widefat striped"><thead><tr><th>Name</th><th>Sort Order</th><th>Active</th><th>Action</th></tr></thead><tbody>';
+		foreach ( $types as $type ) {
+			$form_id = 'servsys-equipment-type-' . (int) $type['id'];
+			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			wp_nonce_field( 'servsys_save_equipment_type_' . (int) $type['id'] );
+			echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '"><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
+			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td><td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td><td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
+		}
+		echo '</tbody></table><h2>Add Equipment Type</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( 'servsys_save_equipment_type_0' );
+		echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="0"><p><label>Name<br><input type="text" name="name" class="regular-text" required></label></p><p><label>Sort Order<br><input type="number" name="sort_order" value="100" class="small-text"></label></p><p><label><input type="checkbox" name="active" value="1" checked> Active</label></p>';
+		submit_button( 'Add Equipment Type' );
+		echo '</form></div>';
+	}
+
+	public function save_equipment_type(): void {
+		$id = isset( $_POST['type_id'] ) ? absint( $_POST['type_id'] ) : 0;
+		check_admin_referer( 'servsys_save_equipment_type_' . $id );
+		if ( ! current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
+		}
+		$data = wp_unslash( $_POST );
+		$data['active'] = isset( $_POST['active'] );
+		( new EquipmentTypeRepository() )->save( $data, $id );
+		wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment-types' ) );
+		exit;
 	}
 
 	private function input( string $name, string $label, $value, bool $required = false ): void {
