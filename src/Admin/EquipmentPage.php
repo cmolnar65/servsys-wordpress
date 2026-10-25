@@ -106,7 +106,7 @@ final class EquipmentPage {
 		echo '<h2>' . ( $equipment_id ? 'Edit Equipment' : 'Add Equipment' ) . '</h2>';
 		echo '<p><strong>Customer:</strong> ' . esc_html( $customer['name'] ) . '<br><strong>Site:</strong> ' . esc_html( $site['name'] ?: $site['address1'] ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		wp_nonce_field( 'servsys_save_equipment_' . $equipment_id );
+		wp_nonce_field( 'servsys_save_equipment );
 		echo '<input type="hidden" name="action" value="servsys_save_equipment"><input type="hidden" name="equipment_id" value="' . esc_attr( (string) $equipment_id ) . '"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . esc_attr( (string) $site_id ) . '"><input type="hidden" name="source" value="' . esc_attr( $source ) . '">';
 		$this->equipment_type_select( isset( $item['equipment_type_id'] ) ? (int) $item['equipment_type_id'] : 0 );
 		$this->input( 'brand', 'Brand', $item['brand'] );
@@ -153,20 +153,20 @@ final class EquipmentPage {
 		foreach ( $types as $type ) {
 			$form_id = 'servsys-equipment-type-' . (int) $type['id'];
 			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			wp_nonce_field( 'servsys_save_equipment_type_' . (int) $type['id'] );
+			wp_nonce_field( 'servsys_save_equipment_type );
 			echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '"><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
 			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td><td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td><td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
 		}
 		echo '</tbody></table><h2>Add Equipment Type</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		wp_nonce_field( 'servsys_save_equipment_type_0' );
+		wp_nonce_field( 'servsys_save_equipment_type' );
 		echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="0"><p><label>Name<br><input type="text" name="name" class="regular-text" required></label></p><p><label>Sort Order<br><input type="number" name="sort_order" value="100" class="small-text"></label></p><p><label><input type="checkbox" name="active" value="1" checked> Active</label></p>';
 		submit_button( 'Add Equipment Type' );
 		echo '</form></div>';
 	}
 
 	public function save_equipment_type(): void {
-		$id = isset( $_POST['type_id'] ) ? absint( $_POST['type_id'] ) : 0;
-		check_admin_referer( 'servsys_save_equipment_type_' . $id );
+		check_admin_referer( 'servsys_save_equipment_type' );
+		$id = isset( $_POST['type_id'] ) ? absint( wp_unslash( $_POST['type_id'] ) ) : 0;
 		if ( ! current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
@@ -187,11 +187,11 @@ final class EquipmentPage {
 	}
 
 	public function save_equipment(): void {
-		$id          = isset( $_POST['equipment_id'] ) ? absint( $_POST['equipment_id'] ) : 0;
-		$customer_id = isset( $_POST['customer_id'] ) ? absint( $_POST['customer_id'] ) : 0;
-		$site_id     = isset( $_POST['site_id'] ) ? absint( $_POST['site_id'] ) : 0;
+		check_admin_referer( 'servsys_save_equipment' );
+		$id          = isset( $_POST['equipment_id'] ) ? absint( wp_unslash( $_POST['equipment_id'] ) ) : 0;
+		$customer_id = isset( $_POST['customer_id'] ) ? absint( wp_unslash( $_POST['customer_id'] ) ) : 0;
+		$site_id     = isset( $_POST['site_id'] ) ? absint( wp_unslash( $_POST['site_id'] ) ) : 0;
 		$source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : '';
-		check_admin_referer( 'servsys_save_equipment_' . $id );
 		if ( ! current_user_can( $id ? Capabilities::EDIT_EQUIPMENT : Capabilities::CREATE_EQUIPMENT ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
