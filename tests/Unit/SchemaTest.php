@@ -16,6 +16,7 @@ final class SchemaTest extends TestCase {
 
 		$this->assertSame(
 			array(
+				'test_servsys_equipment_types',
 				'test_servsys_customer_types',
 				'test_servsys_customers',
 				'test_servsys_sites',
@@ -41,8 +42,10 @@ final class SchemaTest extends TestCase {
 		$this->assertStringContainsString( 'legacy_custnum', $tables['wp_servsys_customers'] );
 		$this->assertStringContainsString( 'customer_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_sites'] );
 		$this->assertStringContainsString( 'legacy_notenum', $tables['wp_servsys_customer_notes'] );
+		$this->assertStringContainsString( 'slug varchar(100) NOT NULL', $tables['wp_servsys_equipment_types'] );
 		$this->assertStringContainsString( 'site_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringContainsString( 'legacy_enum bigint(20) unsigned NULL', $tables['wp_servsys_equipment'] );
+		$this->assertStringContainsString( 'equipment_type_id bigint(20) unsigned NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringContainsString( 'refrigerant_type varchar(50) NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringNotContainsString( 'servsync', $tables['wp_servsys_equipment'] );
 	}
