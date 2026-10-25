@@ -1,10 +1,10 @@
 <?php
 
+namespace ServSys\REST;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace ServSys\REST;
 
 use ServSys\Customers\CustomerRepository;
 use ServSys\Customers\CustomerService;
