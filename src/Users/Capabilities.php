@@ -25,6 +25,9 @@ final class Capabilities {
 	const MANAGE_SERVICE_CALL_CHARGES = 'servsys_manage_service_call_charges';
 	const VIEW_SERVICE_CALL_ACTIVITY = 'servsys_view_service_call_activity';
 	const MANAGE_SERVICE_CALL_ACTIVITY = 'servsys_manage_service_call_activity';
+	const VIEW_COMPLETION_CODES = 'servsys_view_completion_codes';
+	const MANAGE_COMPLETION_CODES = 'servsys_manage_completion_codes';
+	const ASSIGN_COMPLETION_CODES = 'servsys_assign_completion_codes';
 	const VIEW_INVENTORY = 'servsys_view_inventory';
 	const MANAGE_INVENTORY = 'servsys_manage_inventory';
 	const ADJUST_INVENTORY = 'servsys_adjust_inventory';
@@ -55,7 +58,8 @@ final class Capabilities {
 			self::CREATE_EQUIPMENT, self::EDIT_EQUIPMENT, self::VIEW_SERVICE_CALLS,
 			self::CREATE_SERVICE_CALLS, self::EDIT_SERVICE_CALLS, self::VIEW_SERVICE_CALL_CHARGES,
 			self::MANAGE_SERVICE_CALL_CHARGES, self::VIEW_SERVICE_CALL_ACTIVITY,
-			self::MANAGE_SERVICE_CALL_ACTIVITY, self::VIEW_INVENTORY,
+			self::MANAGE_SERVICE_CALL_ACTIVITY, self::VIEW_COMPLETION_CODES,
+			self::MANAGE_COMPLETION_CODES, self::ASSIGN_COMPLETION_CODES, self::VIEW_INVENTORY,
 			self::MANAGE_INVENTORY, self::ADJUST_INVENTORY, self::USE_INVENTORY, self::VIEW_FLAT_RATE,
 			self::MANAGE_FLAT_RATE, self::VIEW_PM_PLANS, self::MANAGE_PM_PLANS,
 			self::VIEW_PM_AGREEMENTS, self::MANAGE_PM_AGREEMENTS
@@ -82,6 +86,9 @@ final class Capabilities {
 			self::MANAGE_SERVICE_CALL_CHARGES,
 			self::VIEW_SERVICE_CALL_ACTIVITY,
 			self::MANAGE_SERVICE_CALL_ACTIVITY,
+			self::VIEW_COMPLETION_CODES,
+			self::MANAGE_COMPLETION_CODES,
+			self::ASSIGN_COMPLETION_CODES,
 			self::VIEW_INVENTORY,
 			self::MANAGE_INVENTORY,
 			self::ADJUST_INVENTORY,
