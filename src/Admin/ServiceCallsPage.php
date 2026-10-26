@@ -8,6 +8,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use ServSys\Customers\CustomerRepository;
 use ServSys\Equipment\EquipmentRepository;
+use ServSys\ServiceCalls\ServiceCallNoteRepository;
+use ServSys\ServiceCalls\ServiceCallNoteService;
 use ServSys\ServiceCalls\ServiceCallService;
 use ServSys\Sites\SiteRepository;
 use ServSys\ServiceCalls\ServiceCallRepository;
@@ -17,6 +19,7 @@ final class ServiceCallsPage {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_servsys_save_service_call', array( $this, 'save_service_call' ) );
+		add_action( 'admin_post_servsys_add_service_call_note', array( $this, 'add_note' ) );
 		add_action( 'admin_post_servsys_service_call_add_equipment', array( $this, 'add_equipment_from_form' ) );
 	}
 
@@ -123,6 +126,24 @@ final class ServiceCallsPage {
 		$this->section( 'Services Performed', $call['services_performed'] );
 		$this->section( 'Parts / Materials', $call['parts_notes'] );
 		$this->section( 'Recommendations', $call['recommendations'] );
+		echo '<hr><h3>Service Call Notes</h3>';
+		$notes = ( new ServiceCallNoteRepository() )->for_service_call( $id );
+		if ( ! $notes ) {
+			echo '<p>No notes have been added to this service call.</p>';
+		}
+		foreach ( $notes as $note ) {
+			$author = ! empty( $note['created_by'] ) ? get_userdata( (int) $note['created_by'] ) : null;
+			echo '<div class="notice notice-info inline"><p><strong>' . esc_html( $note['note_date'] ) . '</strong>';
+			if ( $author ) { echo ' &mdash; ' . esc_html( $author->display_name ); }
+			echo '<br>' . nl2br( esc_html( $note['note'] ) ) . '</p></div>';
+		}
+		if ( current_user_can( Capabilities::EDIT_SERVICE_CALLS ) ) {
+			echo '<h4>Add Note</h4><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			wp_nonce_field( 'servsys_add_service_call_note' );
+			echo '<input type="hidden" name="action" value="servsys_add_service_call_note"><input type="hidden" name="service_call_id" value="' . esc_attr( (string) $id ) . '"><p><label>Note<br><textarea class="large-text" rows="4" name="note" required></textarea></label></p>';
+			submit_button( 'Add Note', 'secondary' );
+			echo '</form>';
+		}
 	}
 
 	private function render_form( int $id ): void {
@@ -235,6 +256,17 @@ final class ServiceCallsPage {
 			admin_url( 'admin.php' )
 		);
 		wp_safe_redirect( $equipment_url );
+		exit;
+	}
+
+	public function add_note(): void {
+		check_admin_referer( 'servsys_add_service_call_note' );
+		$id = isset( $_POST['service_call_id'] ) ? absint( wp_unslash( $_POST['service_call_id'] ) ) : 0;
+		if ( ! current_user_can( Capabilities::EDIT_SERVICE_CALLS ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
+		}
+		( new ServiceCallNoteService() )->create( $id, wp_unslash( $_POST ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=servsys-service-calls&service_call_id=' . $id ) );
 		exit;
 	}
 
