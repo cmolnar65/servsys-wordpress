@@ -55,9 +55,17 @@ if ( ! \ServSys\Users\Authorization::is_wordpress_admin( $user_id ) ) {
 	fwrite( STDERR, "ERROR: --user-id must identify a WordPress Administrator.\n" );
 	exit( 1 );
 }
-if ( ! \ServSys\Companies\CompanyContext::set_current_company_id( $company_id ) ) {
-	fwrite( STDERR, "ERROR: Unable to select ServSys company {$company_id}.\n" );
-	exit( 1 );
+$current_company_id = \ServSys\Companies\CompanyContext::current_company_id();
+if ( $current_company_id !== $company_id ) {
+	if ( ! $apply ) {
+		fwrite( STDERR, "ERROR: Dry run will not change company context. Current company is {$current_company_id}; requested company is {$company_id}.\n" );
+		exit( 1 );
+	}
+	\ServSys\Companies\CompanyContext::set_current_company_id( $company_id );
+	if ( \ServSys\Companies\CompanyContext::current_company_id() !== $company_id ) {
+		fwrite( STDERR, "ERROR: Unable to select ServSys company {$company_id}.\n" );
+		exit( 1 );
+	}
 }
 
 $category_map = array(
