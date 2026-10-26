@@ -41,6 +41,7 @@ final class InventoryReportsPage {
 		$this->render_filters($items,$locations,$types,$filters);
 		$this->render_summary($transactions->totals_by_type($filters));
 		$this->render_current_stock();
+		$this->render_reconciliation();
 		$this->render_transactions($rows);
 		echo '</div>';
 	}
@@ -77,6 +78,22 @@ final class InventoryReportsPage {
 		foreach($totals as $row){
 			$value=round((float)$row['quantity_on_hand']*(float)$row['unit_cost'],2);
 			echo '<tr><td>' . esc_html($row['item_sku']) . '</td><td>' . esc_html($row['item_description']) . '</td><td>' . esc_html($this->quantity($row['quantity_on_hand'])) . '</td><td>' . esc_html($this->quantity($row['reorder_quantity'])) . '</td><td>$' . esc_html(number_format((float)$row['unit_cost'],2)) . '</td><td>$' . esc_html(number_format($value,2)) . '</td></tr>';
+		}
+		echo '</tbody></table>';
+	}
+
+	private function render_reconciliation(): void {
+		$balances=(new InventoryBalanceRepository())->report_rows();
+		$ledger=(new InventoryTransactionRepository())->ledger_totals_by_item_location();
+		echo '<h2>Balance Reconciliation</h2><table class="widefat striped"><thead><tr><th>Item</th><th>Location</th><th>Balance Quantity</th><th>Ledger Quantity</th><th>Difference</th><th>Status</th></tr></thead><tbody>';
+		if(!$balances){echo '<tr><td colspan="6">No inventory balances found.</td></tr>';}
+		foreach($balances as $row){
+			$key=(int)$row['inventory_item_id'] . ':' . (int)$row['inventory_location_id'];
+			$balance=round((float)$row['quantity_on_hand'],4);
+			$ledger_quantity=isset($ledger[$key])?round((float)$ledger[$key],4):0.0;
+			$difference=round($balance-$ledger_quantity,4);
+			$status=abs($difference)<0.0001?'OK':'Mismatch';
+			echo '<tr><td>' . esc_html($row['item_sku'] . ' — ' . $row['item_description']) . '</td><td>' . esc_html($row['location_name']) . '</td><td>' . esc_html($this->quantity($balance)) . '</td><td>' . esc_html($this->quantity($ledger_quantity)) . '</td><td>' . esc_html($this->quantity($difference)) . '</td><td>' . esc_html($status) . '</td></tr>';
 		}
 		echo '</tbody></table>';
 	}
