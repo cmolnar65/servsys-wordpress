@@ -29,10 +29,10 @@ final class Phase8InventoryDomainTest extends TestCase {
 
 	public function test_stock_changes_are_ledger_backed_and_cannot_go_negative(): void {
 		$source=file_get_contents(__DIR__.'/../../src/Inventory/InventoryService.php');
-		$this->assertStringContainsString("if ( $new_quantity < 0 )",$source);
-		$this->assertStringContainsString("$this->balances->set_quantity",$source);
-		$this->assertStringContainsString("$this->transactions->create",$source);
-		$this->assertStringContainsString("$this->balances->set_quantity($item_id,$location_id,$current)",$source);
+		$this->assertStringContainsString('if ( $new_quantity < 0 )',$source);
+		$this->assertStringContainsString('$this->balances->set_quantity',$source);
+		$this->assertStringContainsString('$this->transactions->create',$source);
+		$this->assertStringContainsString('$this->balances->set_quantity($item_id,$location_id,$current)',$source);
 	}
 
 	public function test_transfers_create_linked_out_and_in_transactions(): void {
