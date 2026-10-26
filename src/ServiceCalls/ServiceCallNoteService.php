@@ -16,7 +16,8 @@ final class ServiceCallNoteService {
 	}
 
 	public function create( int $service_call_id, array $input ): int {
-		if ( $service_call_id < 1 || ! $this->service_call_repository->find( $service_call_id ) ) {
+		$service_call = $service_call_id > 0 ? $this->service_call_repository->find( $service_call_id ) : null;
+		if ( ! $service_call ) {
 			throw new \InvalidArgumentException( 'A valid service call is required.' );
 		}
 		$note = isset( $input['note'] ) ? trim( sanitize_textarea_field( $input['note'] ) ) : '';
@@ -27,6 +28,7 @@ final class ServiceCallNoteService {
 		$user = get_current_user_id();
 		$id = $this->repository->create(
 			array(
+				'company_id' => (int) $service_call['company_id'],
 				'service_call_id' => $service_call_id,
 				'note' => $note,
 				'note_date' => $now,
