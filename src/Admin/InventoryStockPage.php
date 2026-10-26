@@ -94,7 +94,7 @@ final class InventoryStockPage {
 		$item_id = isset( $_POST['item_id'] ) ? absint( wp_unslash( $_POST['item_id'] ) ) : 0;
 		$location_id = isset( $_POST['location_id'] ) ? absint( wp_unslash( $_POST['location_id'] ) ) : 0;
 		$type = isset( $_POST['transaction_type'] ) ? sanitize_key( wp_unslash( $_POST['transaction_type'] ) ) : '';
-		$quantity = isset( $_POST['quantity_change'] ) ? (float) wp_unslash( $_POST['quantity_change'] ) : 0.0;
+		$quantity = isset( $_POST['quantity_change'] ) ? (float) sanitize_text_field( wp_unslash( $_POST['quantity_change'] ) ) : 0.0;
 		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 		$url = admin_url( 'admin.php?page=servsys-inventory-stock&item_id=' . $item_id . '&location_id=' . $location_id );
 		try {
@@ -115,7 +115,7 @@ final class InventoryStockPage {
 		$item_id = isset( $_POST['item_id'] ) ? absint( wp_unslash( $_POST['item_id'] ) ) : 0;
 		$from_location_id = isset( $_POST['from_location_id'] ) ? absint( wp_unslash( $_POST['from_location_id'] ) ) : 0;
 		$to_location_id = isset( $_POST['to_location_id'] ) ? absint( wp_unslash( $_POST['to_location_id'] ) ) : 0;
-		$quantity = isset( $_POST['quantity'] ) ? (float) wp_unslash( $_POST['quantity'] ) : 0.0;
+		$quantity = isset( $_POST['quantity'] ) ? (float) sanitize_text_field( wp_unslash( $_POST['quantity'] ) ) : 0.0;
 		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 		$url = admin_url( 'admin.php?page=servsys-inventory-stock&item_id=' . $item_id );
 		try {
