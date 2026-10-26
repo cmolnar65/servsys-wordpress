@@ -263,6 +263,7 @@ final class Schema {
 			"{$wpdb->prefix}servsys_pm_plans" => "CREATE TABLE {$wpdb->prefix}servsys_pm_plans (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				company_id bigint(20) unsigned NOT NULL,
+				legacy_planrec bigint(20) unsigned NULL,
 				description varchar(255) NOT NULL,
 				tm_estimate decimal(13,4) NOT NULL DEFAULT 0.0000,
 				active tinyint(1) NOT NULL DEFAULT 1,
