@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use ServSys\Admin\CompaniesPage;
 use ServSys\Admin\CustomersPage;
 use ServSys\Admin\EquipmentPage;
 use ServSys\Admin\ServiceCallsPage;
@@ -29,6 +30,7 @@ final class Plugin {
 		add_action( 'plugins_loaded', array( Installer::class, 'maybe_upgrade' ) );
 
 		if ( is_admin() ) {
+			( new CompaniesPage() )->register();
 			( new CustomersPage() )->register();
 			( new EquipmentPage() )->register();
 			( new ServiceCallsPage() )->register();
