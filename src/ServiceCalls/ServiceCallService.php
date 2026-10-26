@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use ServSys\Customers\CustomerRepository;
 use ServSys\Equipment\EquipmentRepository;
 use ServSys\Sites\SiteRepository;
+use ServSys\Users\Authorization;
 
 final class ServiceCallService {
 	private $repository;
@@ -42,6 +43,11 @@ final class ServiceCallService {
 			throw new \InvalidArgumentException( 'Invalid service call status.' );
 		}
 
+		$technician_user_id = isset( $input['technician_user_id'] ) ? absint( $input['technician_user_id'] ) : 0;
+		if ( $technician_user_id && ( ! get_userdata( $technician_user_id ) || ! Authorization::can_access_company( $company_id, $technician_user_id ) ) ) {
+			throw new \InvalidArgumentException( 'Selected technician is not an active user of this company.' );
+		}
+
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$data = array(
@@ -49,7 +55,7 @@ final class ServiceCallService {
 			'customer_id'          => $customer_id,
 			'site_id'              => $site_id,
 			'service_date'         => $service_date,
-			'technician_user_id'   => isset( $input['technician_user_id'] ) && absint( $input['technician_user_id'] ) ? absint( $input['technician_user_id'] ) : null,
+			'technician_user_id'   => $technician_user_id ?: null,
 			'status'               => $status,
 			'reason'               => isset( $input['reason'] ) ? sanitize_textarea_field( $input['reason'] ) : null,
 			'services_performed'   => isset( $input['services_performed'] ) ? sanitize_textarea_field( $input['services_performed'] ) : null,
