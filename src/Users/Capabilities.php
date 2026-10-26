@@ -21,6 +21,8 @@ final class Capabilities {
 	const VIEW_SERVICE_CALLS = 'servsys_view_service_calls';
 	const CREATE_SERVICE_CALLS = 'servsys_create_service_calls';
 	const EDIT_SERVICE_CALLS = 'servsys_edit_service_calls';
+	const VIEW_SERVICE_CALL_CHARGES = 'servsys_view_service_call_charges';
+	const MANAGE_SERVICE_CALL_CHARGES = 'servsys_manage_service_call_charges';
 	const VIEW_INVENTORY = 'servsys_view_inventory';
 	const MANAGE_INVENTORY = 'servsys_manage_inventory';
 	const ADJUST_INVENTORY = 'servsys_adjust_inventory';
@@ -49,7 +51,8 @@ final class Capabilities {
 			self::ACCESS, self::MANAGE_COMPANY_USERS, self::VIEW_CUSTOMERS, self::CREATE_CUSTOMERS,
 			self::EDIT_CUSTOMERS, self::CREATE_SITES, self::EDIT_SITES, self::VIEW_EQUIPMENT,
 			self::CREATE_EQUIPMENT, self::EDIT_EQUIPMENT, self::VIEW_SERVICE_CALLS,
-			self::CREATE_SERVICE_CALLS, self::EDIT_SERVICE_CALLS, self::VIEW_INVENTORY,
+			self::CREATE_SERVICE_CALLS, self::EDIT_SERVICE_CALLS, self::VIEW_SERVICE_CALL_CHARGES,
+			self::MANAGE_SERVICE_CALL_CHARGES, self::VIEW_INVENTORY,
 			self::MANAGE_INVENTORY, self::ADJUST_INVENTORY, self::USE_INVENTORY, self::VIEW_FLAT_RATE,
 			self::MANAGE_FLAT_RATE, self::VIEW_PM_PLANS, self::MANAGE_PM_PLANS,
 			self::VIEW_PM_AGREEMENTS, self::MANAGE_PM_AGREEMENTS
@@ -72,6 +75,8 @@ final class Capabilities {
 			self::VIEW_SERVICE_CALLS,
 			self::CREATE_SERVICE_CALLS,
 			self::EDIT_SERVICE_CALLS,
+			self::VIEW_SERVICE_CALL_CHARGES,
+			self::MANAGE_SERVICE_CALL_CHARGES,
 			self::VIEW_INVENTORY,
 			self::MANAGE_INVENTORY,
 			self::ADJUST_INVENTORY,
