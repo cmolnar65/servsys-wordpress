@@ -2,6 +2,8 @@
 
 namespace ServSys\ServiceCalls;
 
+use ServSys\Companies\CompanyContext;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -19,7 +21,7 @@ final class ServiceCallNoteRepository {
 		$wpdb = $this->wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational notes use a plugin-owned custom table and must remain current.
 		return $wpdb->get_results(
-			$wpdb->prepare( 'SELECT * FROM %i WHERE service_call_id = %d ORDER BY note_date DESC, id DESC', $this->table, $service_call_id ),
+			$wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND service_call_id = %d ORDER BY note_date DESC, id DESC', $this->table, CompanyContext::current_company_id(), $service_call_id ),
 			ARRAY_A
 		);
 	}
