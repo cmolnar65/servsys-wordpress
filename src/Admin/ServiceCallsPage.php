@@ -39,6 +39,9 @@ final class ServiceCallsPage {
 		$action = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
 
 		echo '<div class="wrap"><h1>ServSys Service Calls</h1>';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only validation message returned after a nonce-protected POST.
+		$error = isset( $_GET['servsys_error'] ) ? sanitize_text_field( wp_unslash( $_GET['servsys_error'] ) ) : '';
+		if ( $error ) { echo '<div class="notice notice-error inline"><p>' . esc_html( $error ) . '</p></div>'; }
 		if ( 'edit' === $action ) {
 			$this->render_form( $id );
 		} elseif ( $id ) {
@@ -129,7 +132,8 @@ final class ServiceCallsPage {
 		}
 		echo '</ul>';
 		$this->section( 'Services Performed', $call['services_performed'] );
-		$this->section( 'Parts / Materials', $call['parts_notes'] );
+		( new ServiceCallInventoryPage() )->render( $id );
+		$this->section( 'Additional Parts / Materials Notes', $call['parts_notes'] );
 		$this->section( 'Recommendations', $call['recommendations'] );
 		echo '<hr><h3>Service Call Notes</h3>';
 		$notes = ( new ServiceCallNoteRepository() )->for_service_call( $id );
