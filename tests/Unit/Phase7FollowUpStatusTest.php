@@ -4,13 +4,13 @@ final class Phase7FollowUpStatusTest extends TestCase {
 	public function test_status_and_follow_up_remain_independent(): void {
 		$service=file_get_contents(dirname(__DIR__,2).'/src/ServiceCalls/ServiceCallService.php');
 		$this->assertStringContainsString("array( 'open', 'completed', 'cancelled' )",$service);
-		$this->assertStringNotContainsString("'completed' === $status",$service);
-		$this->assertStringContainsString("if ( ! $data['follow_up_required'] )",$service);
+		$this->assertStringNotContainsString("'completed' === \$status",$service);
+		$this->assertStringContainsString("if ( ! \$data['follow_up_required'] )",$service);
 	}
 	public function test_service_call_list_can_filter_outstanding_follow_up(): void {
 		$repo=file_get_contents(dirname(__DIR__,2).'/src/ServiceCalls/ServiceCallRepository.php');
 		$page=file_get_contents(dirname(__DIR__,2).'/src/Admin/ServiceCallsPage.php');
-		$this->assertStringContainsString("'required' === $follow_up",$repo);
+		$this->assertStringContainsString("'required' === \$follow_up",$repo);
 		$this->assertStringContainsString('sc.follow_up_required = 1',$repo);
 		$this->assertStringContainsString('Follow-up required</option>',$page);
 	}
