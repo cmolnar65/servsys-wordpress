@@ -44,12 +44,15 @@ final class CustomersPage {
 			wp_die( esc_html__( 'You do not have permission to view ServSys customers.', 'servsys' ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$customer_id = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$action      = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
 		$edit        = 'edit' === $action;
 
 		echo '<div class="wrap"><h1>ServSys Customers</h1>';
 		if ( 'view-site' === $action && $customer_id ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 			$this->render_site_view( $customer_id, isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0 );
 		} elseif ( 'edit-site' === $action && $customer_id ) {
 			$this->render_customer_view( $customer_id );
@@ -64,6 +67,7 @@ final class CustomersPage {
 	}
 
 	private function render_list(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$term      = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$customers = ( new CustomerRepository() )->search( $term, true );
 		$clear_url = admin_url( 'admin.php?page=servsys' );
@@ -110,7 +114,9 @@ final class CustomersPage {
 		$sites = ( new SiteRepository() )->for_customer( $customer_id, true );
 		echo '<hr><h2>Sites &amp; Equipment</h2>';
 		$this->render_sites_table( $customer_id, $sites );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$edit_site_id = isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$edit_site = ( 'edit-site' === ( isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '' ) && $edit_site_id ) ? ( new SiteRepository() )->find( $edit_site_id ) : null;
 		if ( $edit_site && (int) $edit_site['customer_id'] !== $customer_id ) {
 			$edit_site = null;
