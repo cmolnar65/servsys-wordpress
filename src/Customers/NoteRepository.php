@@ -16,8 +16,9 @@ final class NoteRepository {
 	}
 
 	public function for_customer( int $customer_id ): array {
-		return $this->wpdb->get_results(
-			$this->wpdb->prepare(
+		$wpdb = $this->wpdb;
+		return $wpdb->get_results(
+			$wpdb->prepare(
 				'SELECT * FROM %i WHERE customer_id = %d ORDER BY note_date DESC, id DESC',
 				$this->table,
 				$customer_id
