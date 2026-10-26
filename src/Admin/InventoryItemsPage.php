@@ -80,6 +80,7 @@ final class InventoryItemsPage {
 			'Reorder Quantity'=>$this->quantity( $item['reorder_quantity'] ), 'Status'=>$item['active']?'Active':'Inactive',
 		) as $label=>$value ) { echo '<tr><th>' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>'; }
 		echo '<tr><th>Notes</th><td>' . nl2br( esc_html( $item['notes'] ) ) . '</td></tr></tbody></table>';
+		echo '<p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-inventory-stock&item_id=' . (int) $item['id'] ) ) . '">View Stock &amp; Transactions</a></p>';
 		if ( current_user_can( Capabilities::MANAGE_INVENTORY ) ) { echo '<p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=servsys-inventory-items&item_id=' . (int) $item['id'] . '&action=edit' ) ) . '">Edit Inventory Item</a></p>'; }
 	}
 
