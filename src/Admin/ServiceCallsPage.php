@@ -133,6 +133,7 @@ final class ServiceCallsPage {
 		echo '</ul>';
 		$this->section( 'Services Performed', $call['services_performed'] );
 		( new ServiceCallInventoryPage() )->render( $id );
+		( new ServiceCallChargesPage() )->render( $id );
 		$this->section( 'Additional Parts / Materials Notes', $call['parts_notes'] );
 		$this->section( 'Recommendations', $call['recommendations'] );
 		echo '<hr><h3>Service Call Notes</h3>';
