@@ -57,7 +57,7 @@ final class InventoryService {
 		if ( empty( $item['active'] ) || empty( $location['active'] ) ) { throw new \InvalidArgumentException( 'New inventory activity requires an active item and active location.' ); }
 
 		$wpdb = $GLOBALS['wpdb'];
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Inventory balance and audit ledger must commit atomically.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory balance and audit ledger must commit atomically.
 		$wpdb->query( 'START TRANSACTION' );
 		try {
 			$current=$this->balances->lock_quantity($item_id,$location_id);
@@ -79,11 +79,11 @@ final class InventoryService {
 				'created_by'=>$user ?: null,
 			));
 			if ( ! $transaction_id ) { throw new \RuntimeException( 'Unable to record inventory transaction.' ); }
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Inventory balance and audit ledger must commit atomically.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory balance and audit ledger must commit atomically.
 			$wpdb->query( 'COMMIT' );
 			return $transaction_id;
 		} catch ( \Throwable $exception ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back any partial inventory quantity or ledger change.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Roll back any partial inventory quantity or ledger change.
 			$wpdb->query( 'ROLLBACK' );
 			throw $exception;
 		}
@@ -100,7 +100,7 @@ final class InventoryService {
 		if ( empty( $item['active'] ) || empty( $from['active'] ) || empty( $to['active'] ) ) { throw new \InvalidArgumentException( 'Inventory transfers require an active item and active locations.' ); }
 
 		$wpdb=$GLOBALS['wpdb'];
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Both transfer balances and ledger entries must commit atomically.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Both transfer balances and ledger entries must commit atomically.
 		$wpdb->query( 'START TRANSACTION' );
 		try {
 			$first_location_id=min($from_location_id,$to_location_id);
@@ -127,11 +127,11 @@ final class InventoryService {
 			));
 			if ( ! $in ) { throw new \RuntimeException( 'Unable to record destination inventory transfer.' ); }
 			if ( ! $this->transactions->set_related_transaction( $out, $in ) ) { throw new \RuntimeException( 'Unable to link inventory transfer transactions.' ); }
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Both transfer balances and ledger entries must commit atomically.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Both transfer balances and ledger entries must commit atomically.
 			$wpdb->query( 'COMMIT' );
 			return array('transfer_out_transaction_id'=>$out,'transfer_in_transaction_id'=>$in);
 		} catch ( \Throwable $exception ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back the complete inventory transfer.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Roll back the complete inventory transfer.
 			$wpdb->query( 'ROLLBACK' );
 			throw $exception;
 		}
@@ -150,7 +150,7 @@ final class InventoryService {
 		$unit_selling=round(self::selling_price($unit_cost,$markup),4);
 		$extended=round($unit_selling*$quantity,4);
 		$wpdb=$GLOBALS['wpdb'];
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Stock deduction, ledger and Service Call usage snapshot must commit atomically.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Stock deduction, ledger and Service Call usage snapshot must commit atomically.
 		$wpdb->query('START TRANSACTION');
 		try {
 			$current=$this->balances->lock_quantity($item_id,$location_id);
@@ -170,11 +170,11 @@ final class InventoryService {
 				'created_at'=>$now,'updated_at'=>$now,'created_by'=>$user ?: null,'updated_by'=>$user ?: null,
 			));
 			if ( ! $usage_id ) { throw new \RuntimeException( 'Unable to record Service Call inventory usage.' ); }
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Stock deduction, ledger and Service Call usage snapshot must commit atomically.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Stock deduction, ledger and Service Call usage snapshot must commit atomically.
 			$wpdb->query('COMMIT');
 			return $usage_id;
 		} catch ( \Throwable $exception ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back partial Service Call inventory usage.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Roll back partial Service Call inventory usage.
 			$wpdb->query('ROLLBACK');
 			throw $exception;
 		}
@@ -189,7 +189,7 @@ final class InventoryService {
 		$item=$this->require_item((int)$usage['inventory_item_id']);
 		$this->require_location((int)$usage['inventory_location_id']);
 		$wpdb=$GLOBALS['wpdb'];
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Return balance, ledger and usage reversal must commit atomically.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Return balance, ledger and usage reversal must commit atomically.
 		$wpdb->query('START TRANSACTION');
 		try {
 			$current=$this->balances->lock_quantity((int)$usage['inventory_item_id'],(int)$usage['inventory_location_id']);
@@ -208,11 +208,11 @@ final class InventoryService {
 				'created_at'=>$now,'updated_at'=>$now,'created_by'=>$user ?: null,'updated_by'=>$user ?: null,
 			));
 			if ( ! $reversal_id ) { throw new \RuntimeException( 'Unable to record Service Call inventory reversal.' ); }
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Return balance, ledger and usage reversal must commit atomically.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Return balance, ledger and usage reversal must commit atomically.
 			$wpdb->query('COMMIT');
 			return $reversal_id;
 		} catch ( \Throwable $exception ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back partial Service Call inventory reversal.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Roll back partial Service Call inventory reversal.
 			$wpdb->query('ROLLBACK');
 			throw $exception;
 		}
