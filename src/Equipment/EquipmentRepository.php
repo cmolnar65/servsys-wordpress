@@ -16,33 +16,36 @@ final class EquipmentRepository {
 	}
 
 	public function find( int $id ) {
-		return $this->wpdb->get_row(
-			$this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
+		$wpdb = $this->wpdb;
+		return $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
 		);
 	}
 
 	public function for_site( int $site_id, bool $include_inactive = true ): array {
+		$wpdb = $this->wpdb;
 		if ( $include_inactive ) {
-			return $this->wpdb->get_results(
-				$this->wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
+			return $wpdb->get_results(
+				$wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
 				ARRAY_A
 			);
 		}
-		return $this->wpdb->get_results(
-			$this->wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d AND active = 1 ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
+		return $wpdb->get_results(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d AND active = 1 ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
 			ARRAY_A
 		);
 	}
 
 	public function search( string $term = '', bool $include_inactive = true ): array {
-		$customers = $this->wpdb->prefix . 'servsys_customers';
-		$sites = $this->wpdb->prefix . 'servsys_sites';
+		$wpdb = $this->wpdb;
+		$customers = $wpdb->prefix . 'servsys_customers';
+		$sites = $wpdb->prefix . 'servsys_sites';
 		$active = $include_inactive ? 0 : 1;
 		if ( '' !== $term ) {
-			$like = '%' . $this->wpdb->esc_like( $term ) . '%';
-			return $this->wpdb->get_results(
-				$this->wpdb->prepare(
+			$like = '%' . $wpdb->esc_like( $term ) . '%';
+			return $wpdb->get_results(
+				$wpdb->prepare(
 					'SELECT e.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state
 					FROM %i e INNER JOIN %i c ON c.id = e.customer_id INNER JOIN %i s ON s.id = e.site_id
 					WHERE (%d = 0 OR e.active = 1) AND (e.equipment_type LIKE %s OR e.brand LIKE %s OR e.model_number LIKE %s OR e.serial_number LIKE %s OR c.name LIKE %s OR s.name LIKE %s)
@@ -52,8 +55,8 @@ final class EquipmentRepository {
 				ARRAY_A
 			);
 		}
-		return $this->wpdb->get_results(
-			$this->wpdb->prepare(
+		return $wpdb->get_results(
+			$wpdb->prepare(
 				'SELECT e.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state
 				FROM %i e INNER JOIN %i c ON c.id = e.customer_id INNER JOIN %i s ON s.id = e.site_id
 				WHERE (%d = 0 OR e.active = 1) ORDER BY c.name, s.name, e.equipment_type, e.brand, e.model_number LIMIT 250',
