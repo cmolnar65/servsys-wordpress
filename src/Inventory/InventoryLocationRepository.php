@@ -29,6 +29,10 @@ final class InventoryLocationRepository {
 		return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND active = 1 ORDER BY name,id', $this->table, CompanyContext::current_company_id() ), ARRAY_A );
 	}
 
-	public function create( array $data ): int { $this->wpdb->insert( $this->table, $data ); return (int) $this->wpdb->insert_id; }
+	public function create( array $data ): int {
+		$data['company_id'] = CompanyContext::current_company_id();
+		$this->wpdb->insert( $this->table, $data );
+		return (int) $this->wpdb->insert_id;
+	}
 	public function update( int $id, array $data ): bool { return false !== $this->wpdb->update( $this->table, $data, array( 'id'=>$id, 'company_id'=>CompanyContext::current_company_id() ) ); }
 }
