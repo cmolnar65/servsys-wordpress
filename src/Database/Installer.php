@@ -83,8 +83,9 @@ final class Installer {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Upgrade-safe seed of plugin-owned authorization data.
 			$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE company_id = %d AND user_id = %d', $table, 1, $user_id ) );
 			if ( ! $exists ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Upgrade-safe seed of plugin-owned authorization data.
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Upgrade-safe seed write to plugin-owned authorization table.
 				$wpdb->insert( $table, array( 'company_id'=>1, 'user_id'=>$user_id, 'is_company_admin'=>1, 'active'=>1, 'permissions'=>'[]', 'created_at'=>$now, 'updated_at'=>$now, 'created_by'=>$user_id, 'updated_by'=>$user_id ) );
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
 		}
 	}
