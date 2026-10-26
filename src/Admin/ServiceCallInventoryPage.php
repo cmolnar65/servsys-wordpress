@@ -62,7 +62,7 @@ final class ServiceCallInventoryPage {
 		if(!current_user_can(Capabilities::USE_INVENTORY)){wp_die(esc_html__('Permission denied.','servsys'));}
 		$item_id=isset($_POST['item_id'])?absint(wp_unslash($_POST['item_id'])):0;
 		$location_id=isset($_POST['location_id'])?absint(wp_unslash($_POST['location_id'])):0;
-		$quantity=isset($_POST['quantity'])?(float)wp_unslash($_POST['quantity']):0.0;
+		$quantity=isset($_POST['quantity'])?(float)sanitize_text_field(wp_unslash($_POST['quantity'])):0.0;
 		$note=isset($_POST['note'])?sanitize_textarea_field(wp_unslash($_POST['note'])):'';
 		$url=admin_url('admin.php?page=servsys-service-calls&service_call_id=' . $service_call_id);
 		try{(new InventoryService())->consume_for_service_call($service_call_id,$item_id,$location_id,$quantity,$note);}
