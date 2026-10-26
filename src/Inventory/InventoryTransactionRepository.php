@@ -21,6 +21,14 @@ final class InventoryTransactionRepository {
 		return (int)$this->wpdb->insert_id;
 	}
 
+	public function set_related_transaction( int $transaction_id, int $related_transaction_id ): bool {
+		return false !== $this->wpdb->update(
+			$this->table,
+			array( 'related_transaction_id' => $related_transaction_id ),
+			array( 'id' => $transaction_id, 'company_id' => CompanyContext::current_company_id() )
+		);
+	}
+
 	public function has_related_transaction( int $transaction_id, string $transaction_type ): bool {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Audit ledger relationship must remain current.
 		return (bool) $this->wpdb->get_var($this->wpdb->prepare('SELECT id FROM %i WHERE company_id = %d AND related_transaction_id = %d AND transaction_type = %s LIMIT 1',$this->table,CompanyContext::current_company_id(),$transaction_id,$transaction_type));
