@@ -17,6 +17,7 @@ use ServSys\Admin\InventoryStockPage;
 use ServSys\Admin\InventoryItemsPage;
 use ServSys\Admin\InventoryReportsPage;
 use ServSys\Admin\PMPlansPage;
+use ServSys\Admin\PMAgreementsPage;
 use ServSys\Admin\ServiceCallsPage;
 use ServSys\Admin\ServiceCallInventoryPage;
 use ServSys\Database\Installer;
@@ -51,6 +52,7 @@ final class Plugin {
 			( new InventoryItemsPage() )->register();
 			( new InventoryReportsPage() )->register();
 			( new PMPlansPage() )->register();
+			( new PMAgreementsPage() )->register();
 			( new ServiceCallsPage() )->register();
 			( new ServiceCallInventoryPage() )->register();
 		}
