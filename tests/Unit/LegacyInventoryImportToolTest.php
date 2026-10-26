@@ -7,6 +7,9 @@ final class LegacyInventoryImportToolTest extends TestCase {
 		$tool = file_get_contents( __DIR__ . '/../../tools/legacy-inventory-import.php' );
 		$this->assertStringContainsString( "'/home/cmolnar/ourworldservices_inventory_dump.sql'", $tool );
 		$this->assertStringContainsString( "\$apply       = isset( \$options['apply'] );", $tool );
+		$this->assertStringContainsString( "\$current_company_id = \\ServSys\\Companies\\CompanyContext::current_company_id();", $tool );
+		$this->assertStringContainsString( "if ( ! \$apply )", $tool );
+		$this->assertStringContainsString( "Dry run will not change company context.", $tool );
 		$this->assertStringContainsString( "return 'MISC';", $tool );
 		$this->assertStringContainsString( "return 'EACH';", $tool );
 		$this->assertStringContainsString( "if ( \$quantity < 0 )", $tool );
