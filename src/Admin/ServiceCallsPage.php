@@ -135,6 +135,7 @@ final class ServiceCallsPage {
 		( new ServiceCallInventoryPage() )->render( $id );
 		( new ServiceCallChargesPage() )->render( $id );
 		( new ServiceCallActivityPage() )->render( $id );
+		( new ServiceCallCompletionCodesPage() )->render( $id );
 		$this->section( 'Additional Parts / Materials Notes', $call['parts_notes'] );
 		$this->section( 'Recommendations', $call['recommendations'] );
 		echo '<hr><h3>Service Call Notes</h3>';
