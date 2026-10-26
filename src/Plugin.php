@@ -11,6 +11,7 @@ use ServSys\Admin\ConfigurationPage;
 use ServSys\Admin\CompanyUsersPage;
 use ServSys\Admin\CustomersPage;
 use ServSys\Admin\EquipmentPage;
+use ServSys\Admin\FlatRatePage;
 use ServSys\Admin\InventoryLocationsPage;
 use ServSys\Admin\InventoryStockPage;
 use ServSys\Admin\InventoryItemsPage;
@@ -43,6 +44,7 @@ final class Plugin {
 			( new CompaniesPage() )->register();
 			( new CompanyUsersPage() )->register();
 			( new EquipmentPage() )->register();
+			( new FlatRatePage() )->register();
 			( new InventoryLocationsPage() )->register();
 			( new InventoryStockPage() )->register();
 			( new InventoryItemsPage() )->register();
