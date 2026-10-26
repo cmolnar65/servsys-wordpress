@@ -17,6 +17,7 @@ final class ServiceCallsPage {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_servsys_save_service_call', array( $this, 'save_service_call' ) );
+		add_action( 'admin_post_servsys_service_call_add_equipment', array( $this, 'add_equipment_from_form' ) );
 	}
 
 	public function register_menu(): void {
@@ -145,6 +146,18 @@ final class ServiceCallsPage {
 			wp_die( esc_html__( 'Selected site does not belong to this customer.', 'servsys' ) );
 		}
 		$call = $call ?: array( 'service_date' => current_time( 'Y-m-d' ), 'technician_user_id' => 0, 'status' => 'open', 'reason' => '', 'services_performed' => '', 'recommendations' => '', 'parts_notes' => '', 'follow_up_required' => 0, 'follow_up_date' => '' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Signed transient key only restores previously nonce-validated form state.
+		$draft_key = isset( $_GET['draft'] ) ? sanitize_key( wp_unslash( $_GET['draft'] ) ) : '';
+		if ( $draft_key ) {
+			$draft = get_transient( 'servsys_sc_draft_' . get_current_user_id() . '_' . $draft_key );
+			if ( is_array( $draft ) ) {
+				$call = array_merge( $call, $draft );
+				$customer_id = absint( $draft['customer_id'] ?? $customer_id );
+				$site_id = absint( $draft['site_id'] ?? $site_id );
+			}
+		}
+		$selected_equipment = $draft_key && isset( $draft['equipment_ids'] ) ? array_map( 'absint', (array) $draft['equipment_ids'] ) : ( $id ? $repository->equipment_ids( $id ) : array() );
+		$site_equipment = $site_id ? ( new EquipmentRepository() )->for_site( $site_id, true ) : array();
 		$customers = ( new CustomerRepository() )->search( '', false );
 		$sites = $customer_id ? ( new SiteRepository() )->for_customer( $customer_id, false ) : array();
 
@@ -165,6 +178,18 @@ final class ServiceCallsPage {
 			}
 			echo '</select></label></p><p class="description">Select a customer first and reopen Add Service Call with that customer to choose one of its sites. Site-origin creation preselects both.</p>';
 		}
+		echo '<h3>Equipment Serviced</h3>';
+		if ( $site_id ) {
+			if ( ! $site_equipment ) { echo '<p>No equipment is currently recorded for this site.</p>'; }
+			foreach ( $site_equipment as $item ) {
+				if ( (int) $item['customer_id'] !== $customer_id ) { continue; }
+				$label = trim( $item['equipment_type'] . ' — ' . $item['brand'] . ' ' . $item['model_number'] . ' ' . $item['serial_number'] );
+				echo '<p><label><input type="checkbox" name="equipment_ids[]" value="' . esc_attr( (string) $item['id'] ) . '" ' . checked( in_array( (int) $item['id'], $selected_equipment, true ), true, false ) . '> ' . esc_html( $label ) . '</label></p>';
+			}
+			if ( current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
+				echo '<p><button class="button" type="submit" name="servsys_add_equipment" value="1" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formmethod="post">Add New Equipment</button></p>';
+			}
+		} else { echo '<p>Select a valid customer site before associating equipment.</p>'; }
 		echo '<p><label>Service Date<br><input type="date" name="service_date" value="' . esc_attr( $call['service_date'] ) . '" required></label></p>';
 		echo '<p><label>Technician<br>'; wp_dropdown_users( array( 'name' => 'technician_user_id', 'selected' => (int) $call['technician_user_id'], 'show_option_none' => 'Unassigned' ) ); echo '</label></p>';
 		echo '<p><label>Status<br><select name="status">';
@@ -176,6 +201,41 @@ final class ServiceCallsPage {
 		echo '<p><label><input type="checkbox" name="follow_up_required" value="1" ' . checked( (int) $call['follow_up_required'], 1, false ) . '> Follow-up required</label></p><p><label>Follow-up Date<br><input type="date" name="follow_up_date" value="' . esc_attr( (string) $call['follow_up_date'] ) . '"></label></p>';
 		submit_button( $id ? 'Save Service Call' : 'Add Service Call' );
 		echo '</form>';
+	}
+
+	public function add_equipment_from_form(): void {
+		check_admin_referer( 'servsys_save_service_call' );
+		$id = isset( $_POST['service_call_id'] ) ? absint( wp_unslash( $_POST['service_call_id'] ) ) : 0;
+		if ( ! current_user_can( $id ? Capabilities::EDIT_SERVICE_CALLS : Capabilities::CREATE_SERVICE_CALLS ) || ! current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
+		}
+		$data = wp_unslash( $_POST );
+		$customer_id = isset( $data['customer_id'] ) ? absint( $data['customer_id'] ) : 0;
+		$site_id = isset( $data['site_id'] ) ? absint( $data['site_id'] ) : 0;
+		$site = $site_id ? ( new SiteRepository() )->find( $site_id ) : null;
+		if ( ! $customer_id || ! $site || (int) $site['customer_id'] !== $customer_id ) {
+			wp_die( esc_html__( 'A valid customer site is required before equipment can be added.', 'servsys' ) );
+		}
+		$data['customer_id'] = $customer_id;
+		$data['site_id'] = $site_id;
+		$data['equipment_ids'] = isset( $data['equipment_ids'] ) ? array_map( 'absint', (array) $data['equipment_ids'] ) : array();
+		unset( $data['_wpnonce'], $data['_wp_http_referer'], $data['action'], $data['servsys_add_equipment'] );
+		$key = wp_generate_password( 20, false, false );
+		set_transient( 'servsys_sc_draft_' . get_current_user_id() . '_' . $key, $data, 30 * MINUTE_IN_SECONDS );
+		$return = admin_url( 'admin.php?page=servsys-service-calls&action=edit' . ( $id ? '&service_call_id=' . $id : '' ) . '&draft=' . rawurlencode( $key ) );
+		$equipment_url = add_query_arg(
+			array(
+				'page' => 'servsys-equipment',
+				'action' => 'edit',
+				'customer_id' => $customer_id,
+				'site_id' => $site_id,
+				'source' => 'service-call',
+				'return_to' => rawurlencode( $return ),
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_safe_redirect( $equipment_url );
+		exit;
 	}
 
 	public function save_service_call(): void {

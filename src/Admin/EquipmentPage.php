@@ -39,11 +39,13 @@ final class EquipmentPage {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$source       = isset( $_GET['source'] ) ? sanitize_key( wp_unslash( $_GET['source'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only return navigation; validated with wp_validate_redirect before use.
+		$return_to    = isset( $_GET['return_to'] ) ? wp_validate_redirect( rawurldecode( wp_unslash( $_GET['return_to'] ) ), '' ) : '';
 		$edit         = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
 
 		echo '<div class="wrap"><h1>ServSys Equipment</h1>';
 		if ( $equipment_id || $edit ) {
-			$this->render_equipment( $equipment_id, $customer_id, $site_id, $source );
+			$this->render_equipment( $equipment_id, $customer_id, $site_id, $source, $return_to );
 		} else {
 			$this->render_list();
 		}
@@ -77,7 +79,7 @@ final class EquipmentPage {
 		echo '</tbody></table>';
 	}
 
-	private function render_equipment( int $equipment_id, int $customer_id, int $site_id, string $source = '' ): void {
+	private function render_equipment( int $equipment_id, int $customer_id, int $site_id, string $source = '', string $return_to = '' ): void {
 		$repository = new EquipmentRepository();
 		$item       = $equipment_id ? $repository->find( $equipment_id ) : null;
 
@@ -104,7 +106,8 @@ final class EquipmentPage {
 		$customer_url   = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . $site_id . '#servsys-site-' . $site_id );
 		$site_url       = admin_url( 'admin.php?page=servsys&action=view-site&customer_id=' . $customer_id . '&site_id=' . $site_id );
 		$from_site      = 'site' === $source;
-		$return_url     = $from_site ? $site_url : $customer_url;
+		$from_service_call = 'service-call' === $source && $return_to;
+		$return_url     = $from_service_call ? $return_to : ( $from_site ? $site_url : $customer_url );
 
 		echo '<p>';
 		if ( ! $from_site ) {
@@ -201,13 +204,18 @@ final class EquipmentPage {
 		$customer_id = isset( $_POST['customer_id'] ) ? absint( wp_unslash( $_POST['customer_id'] ) ) : 0;
 		$site_id     = isset( $_POST['site_id'] ) ? absint( wp_unslash( $_POST['site_id'] ) ) : 0;
 		$source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : '';
+		$return_to   = isset( $_POST['return_to'] ) ? wp_validate_redirect( wp_unslash( $_POST['return_to'] ), '' ) : '';
 		if ( ! current_user_can( $id ? Capabilities::EDIT_EQUIPMENT : Capabilities::CREATE_EQUIPMENT ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$data = wp_unslash( $_POST );
 		$data['active'] = isset( $data['active'] );
 		$id = ( new EquipmentService() )->save( $customer_id, $site_id, $data, $id );
-		wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment&action=edit' . ( 'site' === $source ? '&source=site' : '' ) . '&equipment_id=' . $id . '&customer_id=' . $customer_id . '&site_id=' . $site_id ) );
+		if ( 'service-call' === $source && $return_to ) {
+			wp_safe_redirect( $return_to );
+		} else {
+			wp_safe_redirect( admin_url( 'admin.php?page=servsys-equipment&action=edit' . ( 'site' === $source ? '&source=site' : '' ) . '&equipment_id=' . $id . '&customer_id=' . $customer_id . '&site_id=' . $site_id ) );
+		}
 		exit;
 	}
 }
