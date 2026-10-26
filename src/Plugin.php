@@ -30,8 +30,8 @@ final class Plugin {
 		add_action( 'plugins_loaded', array( Installer::class, 'maybe_upgrade' ) );
 
 		if ( is_admin() ) {
-			( new CompaniesPage() )->register();
 			( new CustomersPage() )->register();
+			( new CompaniesPage() )->register();
 			( new EquipmentPage() )->register();
 			( new ServiceCallsPage() )->register();
 		}
