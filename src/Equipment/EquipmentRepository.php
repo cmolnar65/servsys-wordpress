@@ -16,40 +16,41 @@ final class EquipmentRepository {
 	}
 
 	public function find( int $id ) {
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
-		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
+		);
 	}
 
 	public function for_site( int $site_id, bool $include_inactive = true ): array {
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		if ( $include_inactive ) {
-			return $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
+		return $wpdb->get_results(
 				$wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
 				ARRAY_A
 			);
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		return $wpdb->get_results(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d AND active = 1 ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
 			ARRAY_A
-		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
+		);
 	}
 
 	public function search( string $term = '', bool $include_inactive = true ): array {
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$sites = $wpdb->prefix . 'servsys_sites';
 		$active = $include_inactive ? 0 : 1;
 		if ( '' !== $term ) {
 			$like = '%' . $wpdb->esc_like( $term ) . '%';
-			return $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
+		return $wpdb->get_results(
 				$wpdb->prepare(
 					'SELECT e.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state
 					FROM %i e INNER JOIN %i c ON c.id = e.customer_id INNER JOIN %i s ON s.id = e.site_id
@@ -60,6 +61,7 @@ final class EquipmentRepository {
 				ARRAY_A
 			);
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		return $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT e.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state
@@ -68,8 +70,7 @@ final class EquipmentRepository {
 				$this->table, $customers, $sites, $active
 			),
 			ARRAY_A
-		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
+		);
 	}
 
 	public function create( array $data ): int {
