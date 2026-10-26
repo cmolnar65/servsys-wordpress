@@ -32,7 +32,7 @@ final class ServiceCallActivityPage {
   $editable=current_user_can(Capabilities::MANAGE_SERVICE_CALL_ACTIVITY);
   $row=wp_parse_args($row,array('id'=>0,'technician_user_id'=>(int)($call['technician_user_id']??0),'dispatched_at'=>'','arrived_at'=>'','work_started_at'=>'','work_ended_at'=>'','odometer_start'=>'','odometer_end'=>'','travel_miles'=>'','odometer_source'=>'manual','truck_number_snapshot'=>'','notes'=>''));
   echo '<div class="notice notice-info inline"><form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
-  wp_nonce_field('servsys_save_service_call_activity_'.$service_call_id=(int)$call['id'].'_'.(int)$row['id']);
+  wp_nonce_field('servsys_save_service_call_activity_'.(int)$call['id'].'_'.(int)$row['id']);
   echo '<input type="hidden" name="action" value="servsys_save_service_call_activity"><input type="hidden" name="service_call_id" value="'.esc_attr((string)$call['id']).'"><input type="hidden" name="activity_id" value="'.esc_attr((string)$row['id']).'">';
   echo '<table class="form-table"><tbody>';
   echo '<tr><th>Technician</th><td><select name="technician_user_id" '.($editable?'':'disabled').' required><option value="">Select technician</option>';
