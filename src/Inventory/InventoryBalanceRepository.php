@@ -51,7 +51,7 @@ final class InventoryBalanceRepository {
 			'SELECT b.*, i.sku AS item_sku, i.description AS item_description, i.unit_cost, i.reorder_quantity, i.active AS item_active, l.name AS location_name, l.active AS location_active FROM %i b INNER JOIN %i i ON i.id=b.inventory_item_id AND i.company_id=b.company_id INNER JOIN %i l ON l.id=b.inventory_location_id AND l.company_id=b.company_id WHERE b.company_id=%d ORDER BY i.description,i.sku,l.name',
 			$this->table, $items, $locations, CompanyContext::current_company_id()
 		);
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reporting must reflect current quantities.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory reporting must reflect current quantities; $query is prepared immediately above.
 		return $this->wpdb->get_results( $query, ARRAY_A );
 	}
 
