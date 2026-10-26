@@ -63,6 +63,9 @@ final class ServiceCallService {
 		if ( null !== $data['follow_up_date'] && ! $this->valid_date( $data['follow_up_date'] ) ) {
 			throw new \InvalidArgumentException( 'Follow-up date is invalid.' );
 		}
+		if ( ! $data['follow_up_required'] ) {
+			$data['follow_up_date'] = null;
+		}
 
 		if ( $id ) {
 			$existing = $this->repository->find( $id );

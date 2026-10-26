@@ -26,7 +26,7 @@ final class ServiceCallRepository {
 		);
 	}
 
-	public function search( string $term = '', string $status = '' ): array {
+	public function search( string $term = '', string $status = '', string $follow_up = '' ): array {
 		$wpdb      = $this->wpdb;
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$sites     = $wpdb->prefix . 'servsys_sites';
@@ -41,6 +41,11 @@ final class ServiceCallRepository {
 		if ( in_array( $status, array( 'open', 'completed', 'cancelled' ), true ) ) {
 			$where[] = 'sc.status = %s';
 			$args[]  = $status;
+		}
+		if ( 'required' === $follow_up ) {
+			$where[] = 'sc.follow_up_required = 1';
+		} elseif ( 'none' === $follow_up ) {
+			$where[] = 'sc.follow_up_required = 0';
 		}
 
 		$sql = 'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address FROM %i sc INNER JOIN %i c ON c.id = sc.customer_id INNER JOIN %i s ON s.id = sc.site_id WHERE ' . implode( ' AND ', $where ) . ' ORDER BY sc.service_date DESC, sc.id DESC LIMIT 250';

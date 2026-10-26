@@ -52,7 +52,9 @@ final class ServiceCallsPage {
 		$term = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin search/filter; no state change.
 		$status = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
-		$calls = ( new ServiceCallRepository() )->search( $term, $status );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin search/filter; no state change.
+		$follow_up = isset( $_GET['follow_up'] ) ? sanitize_key( wp_unslash( $_GET['follow_up'] ) ) : '';
+		$calls = ( new ServiceCallRepository() )->search( $term, $status, $follow_up );
 		if ( current_user_can( Capabilities::CREATE_SERVICE_CALLS ) ) {
 			echo '<p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=servsys-service-calls&action=edit' ) ) . '">Add Service Call</a></p>';
 		}
@@ -63,7 +65,7 @@ final class ServiceCallsPage {
 		foreach ( array( 'open' => 'Open', 'completed' => 'Completed', 'cancelled' => 'Cancelled' ) as $value => $label ) {
 			echo '<option value="' . esc_attr( $value ) . '" ' . selected( $status, $value, false ) . '>' . esc_html( $label ) . '</option>';
 		}
-		echo '</select> ';
+		echo '</select> <select name="follow_up"><option value="">All follow-up</option><option value="required" ' . selected( $follow_up, 'required', false ) . '>Follow-up required</option><option value="none" ' . selected( $follow_up, 'none', false ) . '>No follow-up</option></select> ';
 		submit_button( 'Filter Service Calls', 'secondary', '', false );
 		echo ' <a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-service-calls' ) ) . '">Clear</a></p></form>';
 
@@ -79,7 +81,8 @@ final class ServiceCallsPage {
 			echo '<td>' . esc_html( $call['site_name'] ?: $call['site_address'] ) . '</td>';
 			echo '<td>' . esc_html( $technician ? $technician->display_name : '' ) . '</td>';
 			echo '<td>' . esc_html( ucfirst( $call['status'] ) ) . '</td>';
-			echo '<td>' . ( $call['follow_up_required'] ? esc_html( $call['follow_up_date'] ?: 'Required' ) : '&mdash;' ) . '</td></tr>';
+				$follow_up_label = $call['follow_up_required'] ? ( $call['follow_up_date'] ?: 'Required — no date set' ) : 'None';
+			echo '<td>' . esc_html( $follow_up_label ) . '</td></tr>';
 		}
 		echo '</tbody></table>';
 	}
@@ -111,7 +114,7 @@ final class ServiceCallsPage {
 		$this->row( 'Site', trim( ( $call['site_name'] ?: $call['site_address'] ) . ' ' . $call['site_city'] . ' ' . $call['site_state'] ) );
 		$this->row( 'Technician', $technician ? $technician->display_name : '' );
 		$this->row( 'Status', ucfirst( $call['status'] ) );
-		$this->row( 'Follow-up', $call['follow_up_required'] ? ( $call['follow_up_date'] ?: 'Required' ) : 'No' );
+		$this->row( 'Follow-up', $call['follow_up_required'] ? ( $call['follow_up_date'] ?: 'Required — no date set' ) : 'None' );
 		echo '</tbody></table>';
 
 		$this->section( 'Reason for Call', $call['reason'] );
@@ -219,7 +222,7 @@ final class ServiceCallsPage {
 		foreach ( array( 'reason' => 'Reason for Call', 'services_performed' => 'Services Performed', 'parts_notes' => 'Parts / Materials', 'recommendations' => 'Recommendations' ) as $name => $label ) {
 			echo '<p><label>' . esc_html( $label ) . '<br><textarea class="large-text" rows="4" name="' . esc_attr( $name ) . '">' . esc_textarea( $call[$name] ) . '</textarea></label></p>';
 		}
-		echo '<p><label><input type="checkbox" name="follow_up_required" value="1" ' . checked( (int) $call['follow_up_required'], 1, false ) . '> Follow-up required</label></p><p><label>Follow-up Date<br><input type="date" name="follow_up_date" value="' . esc_attr( (string) $call['follow_up_date'] ) . '"></label></p>';
+		echo '<fieldset><legend><strong>Follow-up</strong></legend><p class="description">Follow-up is independent of Service Call status. A Completed call may still require follow-up.</p><p><label><input type="checkbox" name="follow_up_required" value="1" ' . checked( (int) $call['follow_up_required'], 1, false ) . '> Follow-up required</label></p><p><label>Follow-up Date (optional)<br><input type="date" name="follow_up_date" value="' . esc_attr( (string) $call['follow_up_date'] ) . '"></label></p></fieldset>';
 		submit_button( $id ? 'Save Service Call' : 'Add Service Call' );
 		echo '</form>';
 	}
