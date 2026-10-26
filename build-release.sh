@@ -72,7 +72,7 @@ if ! grep -Fx "${PLUGIN_SLUG}/servsys.php" <<< "${ZIP_ENTRIES}" >/dev/null; then
     exit 1
 fi
 
-for forbidden in ".git/" ".github/" "tests/" "build-release.sh" "composer.lock" "phpunit.xml.dist"; do
+for forbidden in ".git/" ".github/" "tests/" "tools/" "build-release.sh" "composer.lock" "phpunit.xml.dist"; do
     if grep -F "${forbidden}" <<< "${ZIP_ENTRIES}" >/dev/null; then
         echo "ERROR: Package audit failed: forbidden path found: ${forbidden}" >&2
         rm -f "${ZIP_FILE}"
