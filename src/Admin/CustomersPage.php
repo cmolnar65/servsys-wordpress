@@ -260,6 +260,10 @@ final class CustomersPage {
 		echo '</tbody></table>';
 
 		echo '<hr><h2>Equipment</h2>';
+		if ( current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
+			$add_equipment_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&customer_id=' . $customer_id . '&site_id=' . $site_id );
+			echo '<p><a class="button button-primary" href="' . esc_url( $add_equipment_url ) . '">Add Equipment</a></p>';
+		}
 		$equipment = ( new EquipmentRepository() )->for_site( $site_id, true );
 		if ( ! $equipment ) {
 			echo '<p>No equipment has been added to this site.</p>';

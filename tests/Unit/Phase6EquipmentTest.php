@@ -35,4 +35,13 @@ final class Phase6EquipmentTest extends TestCase {
 		$this->assertStringContainsString( '<th>Refrigerant</th>', $source );
 		$this->assertStringContainsString( "current_user_can( Capabilities::EDIT_EQUIPMENT )", $source );
 	}
+
+	public function test_site_workspace_equipment_list_has_add_equipment_action(): void {
+		$source = $this->source( 'src/Admin/CustomersPage.php' );
+
+		$this->assertStringContainsString( '$add_equipment_url = admin_url(', $source );
+		$this->assertStringContainsString( 'button button-primary', $source );
+		$this->assertStringContainsString( '>Add Equipment</a>', $source );
+		$this->assertStringContainsString( "current_user_can( Capabilities::CREATE_EQUIPMENT )", $source );
+	}
 }
