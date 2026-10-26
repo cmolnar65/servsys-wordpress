@@ -47,6 +47,28 @@ final class Schema {
 				UNIQUE KEY slug (slug),
 				KEY active_sort (active,sort_order)
 			) {$charset};",
+			"{$wpdb->prefix}servsys_company_users" => "CREATE TABLE {$wpdb->prefix}servsys_company_users (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL,
+				user_id bigint(20) unsigned NOT NULL,
+				is_company_admin tinyint(1) NOT NULL DEFAULT 0,
+				employee_name varchar(255) NULL,
+				technician_initials varchar(50) NULL,
+				truck_number varchar(50) NULL,
+				nate_id varchar(100) NULL,
+				department varchar(100) NULL,
+				active tinyint(1) NOT NULL DEFAULT 1,
+				permissions longtext NULL,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY company_user (company_id,user_id),
+				KEY company_id (company_id),
+				KEY user_id (user_id),
+				KEY company_admin (company_id,is_company_admin,active)
+			) {$charset};",
 			"{$wpdb->prefix}servsys_customer_types" => "CREATE TABLE {$wpdb->prefix}servsys_customer_types (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				name varchar(100) NOT NULL,
