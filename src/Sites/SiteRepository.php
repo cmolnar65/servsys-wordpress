@@ -18,13 +18,17 @@ final class SiteRepository {
 	public function for_customer( int $customer_id, bool $include_inactive = true ): array {
 		$wpdb = $this->wpdb;
 		if ( $include_inactive ) {
-			return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
+		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d AND active = 1 ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
 	}
 
 	public function find( int $id ) {
 		$wpdb = $this->wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
