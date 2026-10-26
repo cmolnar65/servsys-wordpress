@@ -7,7 +7,7 @@ use ServSys\Users\Capabilities;
 use ServSys\Users\CompanyUserRepository;
 final class CompanyUsersPage {
 	public function register(): void { add_action('admin_menu',array($this,'menu')); add_action('admin_post_servsys_save_company_user',array($this,'save')); }
-	public function menu(): void { add_submenu_page('servsys','Company Users','Company Users',Capabilities::ACCESS,'servsys-company-users',array($this,'render')); }
+	public function menu(): void { add_submenu_page(null,'Company Users','Company Users',Capabilities::ACCESS,'servsys-company-users',array($this,'render')); }
 	public function render(): void {
 		$company_id=CompanyContext::current_company_id();
 		if ( !$company_id || !Authorization::is_company_admin($company_id) ) { wp_die(esc_html__('Permission denied.','servsys')); }
