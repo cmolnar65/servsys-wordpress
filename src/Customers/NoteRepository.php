@@ -2,6 +2,8 @@
 
 namespace ServSys\Customers;
 
+use ServSys\Companies\CompanyContext;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -20,8 +22,9 @@ final class NoteRepository {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM %i WHERE customer_id = %d ORDER BY note_date DESC, id DESC',
+				'SELECT * FROM %i WHERE company_id = %d AND customer_id = %d ORDER BY note_date DESC, id DESC',
 				$this->table,
+				CompanyContext::current_company_id(),
 				$customer_id
 			),
 			ARRAY_A
