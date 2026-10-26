@@ -35,7 +35,12 @@ final class InventoryLocationsPage {
 			wp_die( esc_html__( 'Inventory location not found.', 'servsys' ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only error message returned after a validated POST redirect.
+		$error = isset( $_GET['servsys_error'] ) ? sanitize_text_field( wp_unslash( $_GET['servsys_error'] ) ) : '';
 		echo '<div class="wrap"><h1>ServSys Inventory Locations</h1>';
+		if ( $error ) {
+			echo '<div class="notice notice-error inline"><p>' . esc_html( $error ) . '</p></div>';
+		}
 		echo '<p>Inventory locations belong to the current company. Deactivate locations that should no longer receive new inventory; historical records are preserved.</p>';
 		echo '<table class="widefat striped"><thead><tr><th>Name</th><th>Type</th><th>Assigned User</th><th>Truck</th><th>Status</th><th>Action</th></tr></thead><tbody>';
 		foreach ( $repository->all( true ) as $location ) {
