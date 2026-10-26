@@ -5,11 +5,13 @@ use ServSys\Companies\CompanyContext;
 use ServSys\Companies\CompanyRepository;
 use ServSys\Companies\CompanyService;
 use ServSys\Users\Capabilities;
+use ServSys\Users\Authorization;
+use ServSys\Users\CompanyUserRepository;
 final class CompaniesPage {
-	public function register(): void { add_action( 'admin_menu', array( $this,'menu' ) ); add_action( 'admin_post_servsys_save_company', array( $this,'save' ) ); add_action( 'admin_post_servsys_switch_company', array( $this,'switch_company' ) ); }
-	public function menu(): void { add_submenu_page( 'servsys','Companies','Companies',Capabilities::MANAGE_COMPANIES,'servsys-companies',array( $this,'render' ) ); }
+	public function register(): void { add_action( 'admin_menu', array( $this,'menu' ) ); add_action( 'admin_post_servsys_save_company', array( $this,'save' ) ); add_action( 'admin_post_servsys_switch_company', array( $this,'switch_company' ) ); add_action( 'admin_post_servsys_assign_company_admin', array( $this,'assign_company_admin' ) ); }
+	public function menu(): void { add_submenu_page( 'servsys','Companies','Companies','manage_options','servsys-companies',array( $this,'render' ) ); }
 	public function render(): void {
-		if ( ! current_user_can( Capabilities::MANAGE_COMPANIES ) ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); }
+		if ( ! Authorization::is_wordpress_admin() ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); }
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation.
 		$id=isset( $_GET['company_id'] ) ? absint( $_GET['company_id'] ) : 0;
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation.
@@ -34,8 +36,21 @@ final class CompaniesPage {
 		echo '<p><label><input type="checkbox" name="use_preprinted_letterhead" value="1" ' . checked( (int)$c['use_preprinted_letterhead'],1,false ) . '> Use pre-printed letterhead (suppress logo and tagline on printed documents)</label></p>';
 		echo '<p><label>Fiscal Year End Month <input class="small-text" type="number" min="1" max="12" name="fiscal_year_end_month" value="' . esc_attr( (string)$c['fiscal_year_end_month'] ) . '"></label> <label>Day <input class="small-text" type="number" min="1" max="31" name="fiscal_year_end_day" value="' . esc_attr( (string)$c['fiscal_year_end_day'] ) . '"></label></p>';
 		echo '<p><label><input type="checkbox" name="customer_portal_enabled" value="1" ' . checked( (int)$c['customer_portal_enabled'],1,false ) . '> Customer Portal Enabled (reserved for future customer-login functionality)</label></p><p><label><input type="checkbox" name="active" value="1" ' . checked( (int)$c['active'],1,false ) . '> Active</label></p>';
+		echo '<h3>Company Administrator</h3><p>WordPress Administrators assign the ServSys Company Administrator. Company Administrators manage users only inside this company.</p><p><label>WordPress User<br><select name="company_admin_user_id"><option value="">No change</option>';
+		foreach ( get_users( array( 'orderby'=>'display_name' ) ) as $user ) { echo '<option value="' . esc_attr((string)$user->ID) . '">' . esc_html($user->display_name . ' (' . $user->user_login . ')') . '</option>'; }
+		echo '</select></label></p>';
 		submit_button( $c['id'] ? 'Save Company':'Create Company' ); echo '</form><p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-companies' ) ) . '">&larr; Return to Companies</a></p>';
 	}
-	public function save(): void { check_admin_referer( 'servsys_save_company' ); if ( ! current_user_can( Capabilities::MANAGE_COMPANIES ) ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); } $id=absint( wp_unslash( $_POST['company_id'] ?? 0 ) ); $d=wp_unslash( $_POST ); $d['active']=isset($d['active']); $d['use_preprinted_letterhead']=isset($d['use_preprinted_letterhead']); $d['customer_portal_enabled']=isset($d['customer_portal_enabled']); $id=(new CompanyService())->save($d,$id); wp_safe_redirect( admin_url( 'admin.php?page=servsys-companies&company_id='.$id ) ); exit; }
-	public function switch_company(): void { check_admin_referer( 'servsys_switch_company' ); if ( ! current_user_can( Capabilities::MANAGE_COMPANIES ) ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); } $id=absint( wp_unslash( $_POST['company_id'] ?? 0 ) ); if ( ! CompanyContext::set_current_company_id($id) ) { wp_die( esc_html__( 'Unable to select company.','servsys' ) ); } wp_safe_redirect( admin_url( 'admin.php?page=servsys-companies' ) ); exit; }
+	public function save(): void { check_admin_referer( 'servsys_save_company' ); if ( ! Authorization::is_wordpress_admin() ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); } $id=absint( wp_unslash( $_POST['company_id'] ?? 0 ) ); $d=wp_unslash( $_POST ); $d['active']=isset($d['active']); $d['use_preprinted_letterhead']=isset($d['use_preprinted_letterhead']); $d['customer_portal_enabled']=isset($d['customer_portal_enabled']); $id=(new CompanyService())->save($d,$id);
+		$admin_user_id=absint($d['company_admin_user_id'] ?? 0);
+		if ($admin_user_id) { $this->set_company_admin($id,$admin_user_id); }
+		wp_safe_redirect( admin_url( 'admin.php?page=servsys-companies&company_id='.$id ) ); exit; }
+	private function set_company_admin( int $company_id, int $user_id ): void {
+		$repo=new CompanyUserRepository(); $existing=$repo->find($company_id,$user_id); $now=current_time('mysql',true);
+		$data=array('company_id'=>$company_id,'user_id'=>$user_id,'is_company_admin'=>1,'active'=>1,'permissions'=>'[]','updated_at'=>$now,'updated_by'=>get_current_user_id());
+		if ($existing) { $repo->save($data,(int)$existing['id']); } else { $data['created_at']=$now; $data['created_by']=get_current_user_id(); $repo->save($data); }
+	}
+	public function assign_company_admin(): void { check_admin_referer('servsys_assign_company_admin'); if(!Authorization::is_wordpress_admin()){wp_die(esc_html__('Permission denied.','servsys'));} $this->set_company_admin(absint($_POST['company_id']??0),absint($_POST['user_id']??0)); wp_safe_redirect(admin_url('admin.php?page=servsys-companies')); exit; }
+
+	public function switch_company(): void { check_admin_referer( 'servsys_switch_company' ); if ( ! Authorization::is_wordpress_admin() ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); } $id=absint( wp_unslash( $_POST['company_id'] ?? 0 ) ); if ( ! CompanyContext::set_current_company_id($id) ) { wp_die( esc_html__( 'Unable to select company.','servsys' ) ); } wp_safe_redirect( admin_url( 'admin.php?page=servsys-companies' ) ); exit; }
 }
