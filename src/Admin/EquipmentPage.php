@@ -22,7 +22,7 @@ final class EquipmentPage {
 
 	public function register_menu(): void {
 		add_submenu_page( 'servsys', 'Equipment', 'Equipment', Capabilities::VIEW_EQUIPMENT, 'servsys-equipment', array( $this, 'render' ) );
-		add_submenu_page( 'servsys', 'Equipment Types', 'Equipment Types', Capabilities::EDIT_EQUIPMENT, 'servsys-equipment-types', array( $this, 'render_equipment_types' ) );
+		add_submenu_page( null, 'Equipment Types', 'Equipment Types', Capabilities::EDIT_EQUIPMENT, 'servsys-equipment-types', array( $this, 'render_equipment_types' ) );
 	}
 
 	public function render(): void {
