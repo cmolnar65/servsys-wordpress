@@ -19,26 +19,28 @@ final class CustomerTypeRepository {
 	}
 
 	public function all( bool $include_inactive = true ): array {
+		$wpdb = $this->wpdb;
 		$key = $include_inactive ? self::CACHE_KEY_ALL : self::CACHE_KEY_ACTIVE;
 		$cached = wp_cache_get( $key, self::CACHE_GROUP );
 		if ( false !== $cached ) {
 			return $cached;
 		}
 		$results = $include_inactive
-			? $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A )
-			: $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
+			? $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A )
+			: $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
 		wp_cache_set( $key, $results, self::CACHE_GROUP );
 		return $results;
 	}
 
 	public function find( int $id ) {
+		$wpdb = $this->wpdb;
 		$key = 'customer_type_' . $id;
 		$cached = wp_cache_get( $key, self::CACHE_GROUP );
 		if ( false !== $cached ) {
 			return $cached;
 		}
-		$record = $this->wpdb->get_row(
-			$this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
+		$record = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
 		);
 		wp_cache_set( $key, $record, self::CACHE_GROUP );
