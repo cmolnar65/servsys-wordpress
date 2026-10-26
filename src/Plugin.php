@@ -22,6 +22,8 @@ use ServSys\Admin\ServiceCallsPage;
 use ServSys\Admin\ServiceCallInventoryPage;
 use ServSys\Admin\ServiceCallChargesPage;
 use ServSys\Admin\ServiceCallActivityPage;
+use ServSys\Admin\CompletionCodesPage;
+use ServSys\Admin\ServiceCallCompletionCodesPage;
 use ServSys\Database\Installer;
 use ServSys\REST\CustomersController;
 
@@ -59,6 +61,8 @@ final class Plugin {
 			( new ServiceCallInventoryPage() )->register();
 			( new ServiceCallChargesPage() )->register();
 			( new ServiceCallActivityPage() )->register();
+			( new CompletionCodesPage() )->register();
+			( new ServiceCallCompletionCodesPage() )->register();
 		}
 
 		add_action(
