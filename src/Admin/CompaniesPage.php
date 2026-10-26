@@ -28,13 +28,14 @@ final class CompaniesPage {
 		} echo '</tbody></table></div>';
 	}
 	private function form( $c ): void {
-		$c=$c ?: array( 'id'=>0,'name'=>'','logo_attachment_id'=>'','tagline'=>'','address1'=>'','address2'=>'','city'=>'','state'=>'','postal_code'=>'','phone'=>'','use_preprinted_letterhead'=>0,'fiscal_year_end_month'=>12,'fiscal_year_end_day'=>31,'customer_portal_enabled'=>0,'active'=>1 );
+		$c=$c ?: array( 'id'=>0,'name'=>'','logo_attachment_id'=>'','tagline'=>'','address1'=>'','address2'=>'','city'=>'','state'=>'','postal_code'=>'','phone'=>'','use_preprinted_letterhead'=>0,'fiscal_year_end_month'=>12,'fiscal_year_end_day'=>31,'customer_portal_enabled'=>0,'inventory_markup_percent'=>'0.000','active'=>1 );
 		echo '<h2>' . ( $c['id'] ? 'Edit Company #' . esc_html( (string)$c['id'] ) : 'Add Company' ) . '</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">'; wp_nonce_field( 'servsys_save_company' );
 		echo '<input type="hidden" name="action" value="servsys_save_company"><input type="hidden" name="company_id" value="' . esc_attr( (string)$c['id'] ) . '">';
 		foreach ( array( 'name'=>'Company Name','logo_attachment_id'=>'Logo Media Attachment ID','address1'=>'Address 1','address2'=>'Address 2','city'=>'City','state'=>'State','postal_code'=>'ZIP / Postal Code','phone'=>'Phone' ) as $f=>$l ) { echo '<p><label>' . esc_html( $l ) . '<br><input class="regular-text" name="' . esc_attr( $f ) . '" value="' . esc_attr( (string)$c[$f] ) . '"' . ( 'name'===$f ? ' required':'' ) . '></label></p>'; }
 		echo '<p><label>Company Tagline<br><textarea class="large-text" rows="3" name="tagline">' . esc_textarea( $c['tagline'] ) . '</textarea></label></p>';
 		echo '<p><label><input type="checkbox" name="use_preprinted_letterhead" value="1" ' . checked( (int)$c['use_preprinted_letterhead'],1,false ) . '> Use pre-printed letterhead (suppress logo and tagline on printed documents)</label></p>';
 		echo '<p><label>Fiscal Year End Month <input class="small-text" type="number" min="1" max="12" name="fiscal_year_end_month" value="' . esc_attr( (string)$c['fiscal_year_end_month'] ) . '"></label> <label>Day <input class="small-text" type="number" min="1" max="31" name="fiscal_year_end_day" value="' . esc_attr( (string)$c['fiscal_year_end_day'] ) . '"></label></p>';
+		echo '<p><label>Inventory Markup (%)<br><input class="small-text" type="number" min="0" step="0.001" name="inventory_markup_percent" value="' . esc_attr( (string) $c['inventory_markup_percent'] ) . '"></label></p>';
 		echo '<p><label><input type="checkbox" name="customer_portal_enabled" value="1" ' . checked( (int)$c['customer_portal_enabled'],1,false ) . '> Customer Portal Enabled (reserved for future customer-login functionality)</label></p><p><label><input type="checkbox" name="active" value="1" ' . checked( (int)$c['active'],1,false ) . '> Active</label></p>';
 		$current_admin_user_id = 0;
 		if ( $c['id'] ) {
