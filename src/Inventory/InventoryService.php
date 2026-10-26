@@ -87,16 +87,50 @@ final class InventoryService {
 	}
 
 	public function transfer_stock( int $item_id, int $from_location_id, int $to_location_id, float $quantity, string $note = '' ): array {
+		$quantity = round( $quantity, 4 );
 		if ( $from_location_id === $to_location_id ) { throw new \InvalidArgumentException( 'Inventory transfer locations must be different.' ); }
 		if ( $quantity <= 0 ) { throw new \InvalidArgumentException( 'Inventory transfer quantity must be greater than zero.' ); }
-		$out=$this->adjust_stock($item_id,$from_location_id,-$quantity,'transfer_out',$note);
+		if ( '' === trim( $note ) ) { throw new \InvalidArgumentException( 'A note or reference is required for inventory transfers.' ); }
+		$item=$this->require_item($item_id);
+		$from=$this->require_location($from_location_id);
+		$to=$this->require_location($to_location_id);
+		if ( empty( $item['active'] ) || empty( $from['active'] ) || empty( $to['active'] ) ) { throw new \InvalidArgumentException( 'Inventory transfers require an active item and active locations.' ); }
+
+		$wpdb=$GLOBALS['wpdb'];
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Both transfer balances and ledger entries must commit atomically.
+		$wpdb->query( 'START TRANSACTION' );
 		try {
-			$in=$this->adjust_stock($item_id,$to_location_id,$quantity,'transfer_in',$note,0,$out);
-		} catch ( \Throwable $e ) {
-			$this->adjust_stock($item_id,$from_location_id,$quantity,'adjustment','Automatic reversal of failed inventory transfer.',0,$out);
-			throw $e;
+			$first_location_id=min($from_location_id,$to_location_id);
+			$second_location_id=max($from_location_id,$to_location_id);
+			$first_quantity=$this->balances->lock_quantity($item_id,$first_location_id);
+			$second_quantity=$this->balances->lock_quantity($item_id,$second_location_id);
+			$from_quantity=$from_location_id === $first_location_id ? $first_quantity : $second_quantity;
+			$to_quantity=$to_location_id === $first_location_id ? $first_quantity : $second_quantity;
+			if ( $from_quantity < $quantity ) { throw new \InvalidArgumentException( 'Insufficient inventory at the source location.' ); }
+			$new_from=round($from_quantity-$quantity,4);
+			$new_to=round($to_quantity+$quantity,4);
+			if ( ! $this->balances->set_quantity($item_id,$from_location_id,$new_from) || ! $this->balances->set_quantity($item_id,$to_location_id,$new_to) ) { throw new \RuntimeException( 'Unable to update inventory transfer balances.' ); }
+			$now=current_time('mysql',true); $user=get_current_user_id();
+			$out=$this->transactions->create(array(
+				'inventory_item_id'=>$item_id,'inventory_location_id'=>$from_location_id,'transaction_type'=>'transfer_out',
+				'quantity_change'=>-$quantity,'unit_cost'=>(float)$item['unit_cost'],'service_call_id'=>null,'related_transaction_id'=>null,
+				'note'=>sanitize_textarea_field($note),'transaction_at'=>$now,'created_at'=>$now,'created_by'=>$user ?: null,
+			));
+			if ( ! $out ) { throw new \RuntimeException( 'Unable to record source inventory transfer.' ); }
+			$in=$this->transactions->create(array(
+				'inventory_item_id'=>$item_id,'inventory_location_id'=>$to_location_id,'transaction_type'=>'transfer_in',
+				'quantity_change'=>$quantity,'unit_cost'=>(float)$item['unit_cost'],'service_call_id'=>null,'related_transaction_id'=>$out,
+				'note'=>sanitize_textarea_field($note),'transaction_at'=>$now,'created_at'=>$now,'created_by'=>$user ?: null,
+			));
+			if ( ! $in ) { throw new \RuntimeException( 'Unable to record destination inventory transfer.' ); }
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Both transfer balances and ledger entries must commit atomically.
+			$wpdb->query( 'COMMIT' );
+			return array('transfer_out_transaction_id'=>$out,'transfer_in_transaction_id'=>$in);
+		} catch ( \Throwable $exception ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back the complete inventory transfer.
+			$wpdb->query( 'ROLLBACK' );
+			throw $exception;
 		}
-		return array('transfer_out_transaction_id'=>$out,'transfer_in_transaction_id'=>$in);
 	}
 
 	private function require_item( int $id ): array {
