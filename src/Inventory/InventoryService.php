@@ -183,6 +183,7 @@ final class InventoryService {
 		$usage=$this->service_call_inventory->find($usage_id);
 		if ( ! $usage ) { throw new \InvalidArgumentException( 'Service Call inventory usage not found.' ); }
 		$quantity=round((float)$usage['quantity'],4);
+		if ( $this->transactions->has_related_transaction( (int)$usage['inventory_transaction_id'], 'service_call_return' ) ) { throw new \InvalidArgumentException( 'This Service Call inventory usage has already been reversed.' ); }
 		if ( $quantity <= 0 ) { throw new \InvalidArgumentException( 'This Service Call inventory usage has already been reversed.' ); }
 		$item=$this->require_item((int)$usage['inventory_item_id']);
 		$this->require_location((int)$usage['inventory_location_id']);
