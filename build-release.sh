@@ -51,6 +51,7 @@ composer install \
 rm -rf \
     "${STAGE_DIR}/.github" \
     "${STAGE_DIR}/tests" \
+    "${STAGE_DIR}/tools" \
     "${STAGE_DIR}/build"
 
 rm -f \
