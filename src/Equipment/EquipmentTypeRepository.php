@@ -86,10 +86,11 @@ final class EquipmentTypeRepository {
 			return $id;
 		}
 		$data['created_at'] = $now;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Lookup row insert is data, not schema; cache is invalidated below.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Lookup row insert is data, not schema; cache is invalidated immediately afterward.
 		if ( false === $wpdb->insert( $this->table, $data ) ) {
 			throw new \RuntimeException( 'Unable to create equipment type.' );
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$id = (int) $wpdb->insert_id;
 		$this->clear_cache( $id );
 		return $id;
