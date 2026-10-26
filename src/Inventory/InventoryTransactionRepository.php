@@ -54,10 +54,35 @@ final class InventoryTransactionRepository {
 	}
 
 	public function totals_by_type( array $filters = array() ): array {
-		$rows=$this->search($filters,1000);
+		$company_id=CompanyContext::current_company_id();
+		$item_id=isset($filters['item_id'])?absint($filters['item_id']):0;
+		$location_id=isset($filters['location_id'])?absint($filters['location_id']):0;
+		$type=isset($filters['transaction_type'])?sanitize_key($filters['transaction_type']):'';
+		$date_from=isset($filters['date_from'])?sanitize_text_field($filters['date_from']):'';
+		$date_to=isset($filters['date_to'])?sanitize_text_field($filters['date_to']):'';
+		$sql='SELECT transaction_type, SUM(quantity_change) AS quantity_change FROM %i WHERE company_id=%d';
+		$args=array($this->table,$company_id);
+		if($item_id){$sql.=' AND inventory_item_id=%d';$args[]=$item_id;}
+		if($location_id){$sql.=' AND inventory_location_id=%d';$args[]=$location_id;}
+		if($type){$sql.=' AND transaction_type=%s';$args[]=$type;}
+		if($date_from){$sql.=' AND transaction_at >= %s';$args[]=$date_from . ' 00:00:00';}
+		if($date_to){$sql.=' AND transaction_at <= %s';$args[]=$date_to . ' 23:59:59';}
+		$sql.=' GROUP BY transaction_type ORDER BY transaction_type';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reporting requires complete ledger aggregation.
+		$rows=$this->wpdb->get_results($this->wpdb->prepare($sql,$args),ARRAY_A);
 		$totals=array();
-		foreach($rows as $row){$type=$row['transaction_type'];if(!isset($totals[$type])){$totals[$type]=0.0;}$totals[$type]=round($totals[$type]+(float)$row['quantity_change'],4);}
-		ksort($totals);
+		foreach($rows as $row){$totals[$row['transaction_type']]=round((float)$row['quantity_change'],4);}
+		return $totals;
+	}
+
+	public function ledger_totals_by_item_location(): array {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reconciliation must aggregate the complete current-company ledger.
+		$rows=$this->wpdb->get_results($this->wpdb->prepare(
+			'SELECT inventory_item_id, inventory_location_id, SUM(quantity_change) AS ledger_quantity FROM %i WHERE company_id=%d GROUP BY inventory_item_id,inventory_location_id',
+			$this->table,CompanyContext::current_company_id()
+		),ARRAY_A);
+		$totals=array();
+		foreach($rows as $row){$totals[(int)$row['inventory_item_id'] . ':' . (int)$row['inventory_location_id']]=round((float)$row['ledger_quantity'],4);}
 		return $totals;
 	}
 
