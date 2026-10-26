@@ -24,11 +24,14 @@ final class EquipmentTypeRepository {
 		$cached = wp_cache_get( $key, self::CACHE_GROUP );
 		if ( false !== $cached ) {
 			return $cached;
-		}
+		} 
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Lookup reads use ServSys plugin-owned custom tables; results are cached immediately below.
+
 		$results = $include_inactive
 			? $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A )
 			: $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
 		wp_cache_set( $key, $results, self::CACHE_GROUP );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
 		return $results;
 	}
 
@@ -39,6 +42,7 @@ final class EquipmentTypeRepository {
 		if ( false !== $cached ) {
 			return $cached;
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Lookup read uses a ServSys plugin-owned custom table and is cached immediately below.
 		$record = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ), ARRAY_A );
 		wp_cache_set( $key, $record, self::CACHE_GROUP );
 		return $record;
@@ -51,6 +55,7 @@ final class EquipmentTypeRepository {
 			throw new \InvalidArgumentException( 'Equipment type name is required.' );
 		}
 		$slug = sanitize_title( $name );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fresh duplicate check is required immediately before the write.
 		$duplicate_id = $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT id FROM %i WHERE (LOWER(TRIM(name)) = LOWER(TRIM(%s)) OR slug = %s) AND id <> %d LIMIT 1',
@@ -73,6 +78,7 @@ final class EquipmentTypeRepository {
 			'updated_at' => $now,
 		);
 		if ( $id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Lookup write invalidates the related cache immediately below.
 			if ( false === $wpdb->update( $this->table, $data, array( 'id' => $id ) ) ) {
 				throw new \RuntimeException( 'Unable to update equipment type.' );
 			}
@@ -80,6 +86,7 @@ final class EquipmentTypeRepository {
 			return $id;
 		}
 		$data['created_at'] = $now;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Lookup row insert is data, not schema; cache is invalidated below.
 		if ( false === $wpdb->insert( $this->table, $data ) ) {
 			throw new \RuntimeException( 'Unable to create equipment type.' );
 		}
