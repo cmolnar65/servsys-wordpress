@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Capabilities {
 	const ACCESS = 'servsys_access';
 	const MANAGE_COMPANIES = 'servsys_manage_companies';
+	const MANAGE_COMPANY_USERS = 'servsys_manage_company_users';
 	const VIEW_CUSTOMERS = 'servsys_view_customers';
 	const CREATE_CUSTOMERS = 'servsys_create_customers';
 	const EDIT_CUSTOMERS = 'servsys_edit_customers';
@@ -33,10 +34,20 @@ final class Capabilities {
 		}
 	}
 
+	public static function company_capabilities(): array {
+		return array(
+			self::ACCESS, self::MANAGE_COMPANY_USERS, self::VIEW_CUSTOMERS, self::CREATE_CUSTOMERS,
+			self::EDIT_CUSTOMERS, self::CREATE_SITES, self::EDIT_SITES, self::VIEW_EQUIPMENT,
+			self::CREATE_EQUIPMENT, self::EDIT_EQUIPMENT, self::VIEW_SERVICE_CALLS,
+			self::CREATE_SERVICE_CALLS, self::EDIT_SERVICE_CALLS
+		);
+	}
+
 	public static function all(): array {
 		return array(
 			self::ACCESS,
 			self::MANAGE_COMPANIES,
+			self::MANAGE_COMPANY_USERS,
 			self::VIEW_CUSTOMERS,
 			self::CREATE_CUSTOMERS,
 			self::EDIT_CUSTOMERS,
