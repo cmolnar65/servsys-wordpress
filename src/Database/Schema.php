@@ -272,6 +272,7 @@ final class Schema {
 				created_by bigint(20) unsigned NULL,
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
+				UNIQUE KEY company_legacy_planrec (company_id,legacy_planrec),
 				KEY company_id (company_id),
 				KEY company_active (company_id,active),
 				KEY description (description)
