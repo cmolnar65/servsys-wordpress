@@ -30,10 +30,15 @@ final class EquipmentPage {
 			wp_die( esc_html__( 'You do not have permission to view ServSys equipment.', 'servsys' ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$equipment_id = isset( $_GET['equipment_id'] ) ? absint( $_GET['equipment_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$site_id      = isset( $_GET['site_id'] ) ? absint( $_GET['site_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$customer_id  = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$source       = isset( $_GET['source'] ) ? sanitize_key( wp_unslash( $_GET['source'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$edit         = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
 
 		echo '<div class="wrap"><h1>ServSys Equipment</h1>';
@@ -46,6 +51,7 @@ final class EquipmentPage {
 	}
 
 	private function render_list(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$term      = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$equipment = ( new EquipmentRepository() )->search( $term, true );
 		$clear_url = admin_url( 'admin.php?page=servsys-equipment' );
@@ -144,6 +150,7 @@ final class EquipmentPage {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
 		$types = ( new EquipmentTypeRepository() )->all( true );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$error = isset( $_GET['servsys_error'] ) ? sanitize_text_field( wp_unslash( $_GET['servsys_error'] ) ) : '';
 		echo '<div class="wrap"><h1>ServSys Equipment Types</h1>';
 		if ( $error ) {
