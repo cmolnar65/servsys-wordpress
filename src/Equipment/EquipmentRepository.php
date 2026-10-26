@@ -16,14 +16,17 @@ final class EquipmentRepository {
 	}
 
 	public function find( int $id ) {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		return $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
-		);
+		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 	}
 
 	public function for_site( int $site_id, bool $include_inactive = true ): array {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		if ( $include_inactive ) {
 			return $wpdb->get_results(
@@ -34,10 +37,12 @@ final class EquipmentRepository {
 		return $wpdb->get_results(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE site_id = %d AND active = 1 ORDER BY equipment_type, brand, model_number, id', $this->table, $site_id ),
 			ARRAY_A
-		);
+		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 	}
 
 	public function search( string $term = '', bool $include_inactive = true ): array {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$sites = $wpdb->prefix . 'servsys_sites';
@@ -63,7 +68,8 @@ final class EquipmentRepository {
 				$this->table, $customers, $sites, $active
 			),
 			ARRAY_A
-		);
+		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 	}
 
 	public function create( array $data ): int {
