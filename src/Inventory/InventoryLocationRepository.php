@@ -16,16 +16,16 @@ final class InventoryLocationRepository {
 	}
 
 	public function find( int $id ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current plugin-owned inventory data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Current plugin-owned inventory data.
 		return $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d AND company_id = %d', $this->table, $id, CompanyContext::current_company_id() ), ARRAY_A );
 	}
 
 	public function all( bool $include_inactive = true ): array {
 		if ( $include_inactive ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current plugin-owned inventory data.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Current plugin-owned inventory data.
 			return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d ORDER BY name,id', $this->table, CompanyContext::current_company_id() ), ARRAY_A );
 		}
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current plugin-owned inventory data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Current plugin-owned inventory data.
 		return $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND active = 1 ORDER BY name,id', $this->table, CompanyContext::current_company_id() ), ARRAY_A );
 	}
 
