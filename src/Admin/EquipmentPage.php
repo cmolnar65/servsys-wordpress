@@ -38,11 +38,11 @@ final class EquipmentPage {
 		$customer_id  = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		$source       = isset( $_GET['source'] ) ? sanitize_key( wp_unslash( $_GET['source'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only return navigation; validated with wp_validate_redirect before use.
-		$return_to    = isset( $_GET['return_to'] ) ? wp_validate_redirect( rawurldecode( sanitize_text_field( wp_unslash( $_GET['return_to'] ) ) ), '' ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation; no state change.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation; no state change.
+		$return_to_raw = isset( $_GET['return_to'] ) ? sanitize_text_field( wp_unslash( $_GET['return_to'] ) ) : '';
+		$return_to    = wp_validate_redirect( rawurldecode( $return_to_raw ), '' );
 		$edit         = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		echo '<div class="wrap"><h1>ServSys Equipment</h1>';
 		if ( $equipment_id || $edit ) {
@@ -205,7 +205,8 @@ final class EquipmentPage {
 		$customer_id = isset( $_POST['customer_id'] ) ? absint( wp_unslash( $_POST['customer_id'] ) ) : 0;
 		$site_id     = isset( $_POST['site_id'] ) ? absint( wp_unslash( $_POST['site_id'] ) ) : 0;
 		$source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : '';
-		$return_to   = isset( $_POST['return_to'] ) ? wp_validate_redirect( sanitize_text_field( wp_unslash( $_POST['return_to'] ) ), '' ) : '';
+		$return_to_raw = isset( $_POST['return_to'] ) ? sanitize_text_field( wp_unslash( $_POST['return_to'] ) ) : '';
+		$return_to   = wp_validate_redirect( $return_to_raw, '' );
 		if ( ! current_user_can( $id ? Capabilities::EDIT_EQUIPMENT : Capabilities::CREATE_EQUIPMENT ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
