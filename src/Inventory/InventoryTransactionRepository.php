@@ -54,7 +54,7 @@ final class InventoryTransactionRepository {
 		$sql.=' ORDER BY t.transaction_at DESC,t.id DESC LIMIT %d';$args[]=$limit;
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query fragments are fixed strings and all values/identifiers are supplied as prepare() arguments.
 		$prepared_sql = $this->wpdb->prepare( $sql, $args );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Inventory reporting must reflect the current audit ledger; $prepared_sql is fully prepared above.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Inventory reporting must reflect the current audit ledger; $prepared_sql is fully prepared above.
 		return $this->wpdb->get_results( $prepared_sql, ARRAY_A );
 	}
 
@@ -80,7 +80,7 @@ final class InventoryTransactionRepository {
 		$sql.=' GROUP BY transaction_type ORDER BY transaction_type';
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query fragments are fixed strings and all values/identifiers are supplied as prepare() arguments.
 		$prepared_sql = $this->wpdb->prepare( $sql, $args );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Complete ledger aggregation requires the current prepared SQL.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Complete ledger aggregation requires the current prepared SQL.
 		$rows=$this->wpdb->get_results( $prepared_sql, ARRAY_A );
 		$totals=array();
 		foreach($rows as $row){$totals[$row['transaction_type']]=round((float)$row['quantity_change'],4);}
@@ -93,7 +93,7 @@ final class InventoryTransactionRepository {
 			'SELECT inventory_item_id, inventory_location_id, SUM(quantity_change) AS ledger_quantity FROM %i WHERE company_id=%d GROUP BY inventory_item_id,inventory_location_id',
 			$this->table, CompanyContext::current_company_id()
 		);
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reconciliation must aggregate the complete current-company ledger.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory reconciliation must aggregate the complete current-company ledger; $query is prepared immediately above.
 		$rows=$this->wpdb->get_results( $query, ARRAY_A );
 		$totals=array();
 		foreach($rows as $row){$totals[(int)$row['inventory_item_id'] . ':' . (int)$row['inventory_location_id']]=round((float)$row['ledger_quantity'],4);}
