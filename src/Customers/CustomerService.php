@@ -2,6 +2,8 @@
 
 namespace ServSys\Customers;
 
+use ServSys\Companies\CompanyContext;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -31,6 +33,7 @@ final class CustomerService {
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$data = array(
+			'company_id'       => CompanyContext::current_company_id(),
 			'name'             => $name,
 			'customer_type_id' => $type_id ?: null,
 			'customer_type'    => $type ? $type['name'] : null,
