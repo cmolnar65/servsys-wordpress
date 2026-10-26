@@ -2,6 +2,8 @@
 
 namespace ServSys\ServiceCalls;
 
+use ServSys\Companies\CompanyContext;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -21,7 +23,7 @@ final class ServiceCallRepository {
 		$wpdb = $this->wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_row(
-			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d AND company_id = %d', $this->table, $id, CompanyContext::current_company_id() ),
 			ARRAY_A
 		);
 	}
@@ -30,8 +32,8 @@ final class ServiceCallRepository {
 		$wpdb      = $this->wpdb;
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$sites     = $wpdb->prefix . 'servsys_sites';
-		$where     = array( '1=1' );
-		$args      = array( $this->table, $customers, $sites );
+		$where     = array( 'sc.company_id = %d' );
+		$args      = array( $this->table, $customers, $sites, CompanyContext::current_company_id() );
 
 		if ( '' !== $term ) {
 			$like    = '%' . $wpdb->esc_like( $term ) . '%';
@@ -60,8 +62,9 @@ final class ServiceCallRepository {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM %i WHERE customer_id = %d AND site_id = %d ORDER BY service_date DESC, id DESC LIMIT %d',
+				'SELECT * FROM %i WHERE company_id = %d AND customer_id = %d AND site_id = %d ORDER BY service_date DESC, id DESC LIMIT %d',
 				$this->table,
+				CompanyContext::current_company_id(),
 				$customer_id,
 				$site_id,
 				$limit
@@ -76,7 +79,7 @@ final class ServiceCallRepository {
 		$sites     = $wpdb->prefix . 'servsys_sites';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		return $wpdb->get_row(
-			$wpdb->prepare( 'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state FROM %i sc INNER JOIN %i c ON c.id = sc.customer_id INNER JOIN %i s ON s.id = sc.site_id WHERE sc.id = %d', $this->table, $customers, $sites, $id ),
+			$wpdb->prepare( 'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state FROM %i sc INNER JOIN %i c ON c.id = sc.customer_id INNER JOIN %i s ON s.id = sc.site_id WHERE sc.id = %d AND sc.company_id = %d', $this->table, $customers, $sites, $id, CompanyContext::current_company_id() ),
 			ARRAY_A
 		);
 	}
@@ -98,7 +101,7 @@ final class ServiceCallRepository {
 		$wpdb = $this->wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational relationship data must remain current.
 		$ids = $wpdb->get_col(
-			$wpdb->prepare( 'SELECT equipment_id FROM %i WHERE service_call_id = %d ORDER BY id', $this->equipment_table, $service_call_id )
+			$wpdb->prepare( 'SELECT equipment_id FROM %i WHERE service_call_id = %d AND company_id = %d ORDER BY id', $this->equipment_table, $service_call_id, CompanyContext::current_company_id() )
 		);
 		return array_map( 'intval', $ids );
 	}
@@ -116,6 +119,7 @@ final class ServiceCallRepository {
 			if ( false === $wpdb->insert(
 				$this->equipment_table,
 				array(
+					'company_id'      => CompanyContext::current_company_id(),
 					'service_call_id' => $service_call_id,
 					'equipment_id'    => (int) $equipment_id,
 					'created_at'      => $now,
