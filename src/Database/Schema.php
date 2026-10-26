@@ -491,6 +491,34 @@ final class Schema {
 				KEY inventory_location_id (inventory_location_id),
 				KEY inventory_transaction_id (inventory_transaction_id)
 			) {$charset};",
+			"{$wpdb->prefix}servsys_completion_codes" => "CREATE TABLE {$wpdb->prefix}servsys_completion_codes (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL,
+				description varchar(255) NOT NULL,
+				sort_order int(11) NOT NULL DEFAULT 0,
+				active tinyint(1) NOT NULL DEFAULT 1,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY company_description (company_id,description),
+				KEY company_active_sort (company_id,active,sort_order)
+			) {$charset};",
+			"{$wpdb->prefix}servsys_service_call_completion_codes" => "CREATE TABLE {$wpdb->prefix}servsys_service_call_completion_codes (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL,
+				service_call_id bigint(20) unsigned NOT NULL,
+				completion_code_id bigint(20) unsigned NOT NULL,
+				created_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY call_completion_code (service_call_id,completion_code_id),
+				KEY company_id (company_id),
+				KEY service_call_id (service_call_id),
+				KEY completion_code_id (completion_code_id),
+				KEY company_call (company_id,service_call_id)
+			) {$charset};",
 			"{$wpdb->prefix}servsys_service_call_activity" => "CREATE TABLE {$wpdb->prefix}servsys_service_call_activity (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				company_id bigint(20) unsigned NOT NULL,
