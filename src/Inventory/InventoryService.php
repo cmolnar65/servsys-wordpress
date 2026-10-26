@@ -33,7 +33,7 @@ final class InventoryService {
 
 	public static function selling_price( float $unit_cost, float $markup_percent ): float {
 		if ( $unit_cost < 0 || $markup_percent < 0 ) { throw new \InvalidArgumentException( 'Cost and markup cannot be negative.' ); }
-		return round( $unit_cost * ( 1 + ( $markup_percent / 100 ) ), 2 );
+		return round( $unit_cost * ( 1 + ( $markup_percent / 100 ) ), 4 );
 	}
 
 	public function current_markup_percent(): float {
