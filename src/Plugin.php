@@ -15,6 +15,7 @@ use ServSys\Admin\InventoryLocationsPage;
 use ServSys\Admin\InventoryStockPage;
 use ServSys\Admin\InventoryItemsPage;
 use ServSys\Admin\ServiceCallsPage;
+use ServSys\Admin\ServiceCallInventoryPage;
 use ServSys\Database\Installer;
 use ServSys\REST\CustomersController;
 
@@ -45,6 +46,7 @@ final class Plugin {
 			( new InventoryStockPage() )->register();
 			( new InventoryItemsPage() )->register();
 			( new ServiceCallsPage() )->register();
+			( new ServiceCallInventoryPage() )->register();
 		}
 
 		add_action(
