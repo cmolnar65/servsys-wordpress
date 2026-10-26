@@ -13,19 +13,22 @@ final class InventoryService {
 	private $balances;
 	private $transactions;
 	private $companies;
+	private $service_call_inventory;
 
 	public function __construct(
 		InventoryItemRepository $items = null,
 		InventoryLocationRepository $locations = null,
 		InventoryBalanceRepository $balances = null,
 		InventoryTransactionRepository $transactions = null,
-		CompanyRepository $companies = null
+		CompanyRepository $companies = null,
+		ServiceCallInventoryRepository $service_call_inventory = null
 	) {
 		$this->items=$items ?: new InventoryItemRepository();
 		$this->locations=$locations ?: new InventoryLocationRepository();
 		$this->balances=$balances ?: new InventoryBalanceRepository();
 		$this->transactions=$transactions ?: new InventoryTransactionRepository();
 		$this->companies=$companies ?: new CompanyRepository();
+		$this->service_call_inventory=$service_call_inventory ?: new ServiceCallInventoryRepository();
 	}
 
 	public static function selling_price( float $unit_cost, float $markup_percent ): float {
@@ -129,6 +132,86 @@ final class InventoryService {
 		} catch ( \Throwable $exception ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back the complete inventory transfer.
 			$wpdb->query( 'ROLLBACK' );
+			throw $exception;
+		}
+	}
+
+	public function consume_for_service_call( int $service_call_id, int $item_id, int $location_id, float $quantity, string $note = '' ): int {
+		$quantity=round($quantity,4);
+		if ( $quantity <= 0 ) { throw new \InvalidArgumentException( 'Inventory usage quantity must be greater than zero.' ); }
+		$item=$this->require_item($item_id);
+		$location=$this->require_location($location_id);
+		if ( empty($item['active']) || empty($location['active']) ) { throw new \InvalidArgumentException( 'Service Call inventory usage requires an active item and active location.' ); }
+		$service_call=(new \ServSys\ServiceCalls\ServiceCallRepository())->find($service_call_id);
+		if ( ! $service_call || (int)$service_call['company_id'] !== CompanyContext::current_company_id() ) { throw new \InvalidArgumentException( 'Service Call does not belong to the current company.' ); }
+		$markup=$this->current_markup_percent();
+		$unit_cost=round((float)$item['unit_cost'],4);
+		$unit_selling=round(self::selling_price($unit_cost,$markup),4);
+		$extended=round($unit_selling*$quantity,4);
+		$wpdb=$GLOBALS['wpdb'];
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Stock deduction, ledger and Service Call usage snapshot must commit atomically.
+		$wpdb->query('START TRANSACTION');
+		try {
+			$current=$this->balances->lock_quantity($item_id,$location_id);
+			if ( $current < $quantity ) { throw new \InvalidArgumentException( 'Insufficient inventory at the selected location.' ); }
+			if ( ! $this->balances->set_quantity($item_id,$location_id,round($current-$quantity,4)) ) { throw new \RuntimeException( 'Unable to update inventory balance.' ); }
+			$now=current_time('mysql',true); $user=get_current_user_id();
+			$transaction_id=$this->transactions->create(array(
+				'inventory_item_id'=>$item_id,'inventory_location_id'=>$location_id,'transaction_type'=>'service_call_usage',
+				'quantity_change'=>-$quantity,'unit_cost'=>$unit_cost,'service_call_id'=>$service_call_id,'related_transaction_id'=>null,
+				'note'=>sanitize_textarea_field($note),'transaction_at'=>$now,'created_at'=>$now,'created_by'=>$user ?: null,
+			));
+			if ( ! $transaction_id ) { throw new \RuntimeException( 'Unable to record Service Call inventory transaction.' ); }
+			$usage_id=$this->service_call_inventory->create(array(
+				'service_call_id'=>$service_call_id,'inventory_item_id'=>$item_id,'inventory_location_id'=>$location_id,'inventory_transaction_id'=>$transaction_id,
+				'quantity'=>$quantity,'item_sku_snapshot'=>$item['sku'],'item_description_snapshot'=>$item['description'],
+				'unit_cost_snapshot'=>$unit_cost,'markup_percent_snapshot'=>$markup,'unit_selling_price_snapshot'=>$unit_selling,'extended_selling_price'=>$extended,
+				'created_at'=>$now,'updated_at'=>$now,'created_by'=>$user ?: null,'updated_by'=>$user ?: null,
+			));
+			if ( ! $usage_id ) { throw new \RuntimeException( 'Unable to record Service Call inventory usage.' ); }
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Stock deduction, ledger and Service Call usage snapshot must commit atomically.
+			$wpdb->query('COMMIT');
+			return $usage_id;
+		} catch ( \Throwable $exception ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back partial Service Call inventory usage.
+			$wpdb->query('ROLLBACK');
+			throw $exception;
+		}
+	}
+
+	public function return_service_call_usage( int $usage_id, string $note = '' ): int {
+		$usage=$this->service_call_inventory->find($usage_id);
+		if ( ! $usage ) { throw new \InvalidArgumentException( 'Service Call inventory usage not found.' ); }
+		$quantity=round((float)$usage['quantity'],4);
+		if ( $quantity <= 0 ) { throw new \InvalidArgumentException( 'This Service Call inventory usage has already been reversed.' ); }
+		$item=$this->require_item((int)$usage['inventory_item_id']);
+		$this->require_location((int)$usage['inventory_location_id']);
+		$wpdb=$GLOBALS['wpdb'];
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Return balance, ledger and usage reversal must commit atomically.
+		$wpdb->query('START TRANSACTION');
+		try {
+			$current=$this->balances->lock_quantity((int)$usage['inventory_item_id'],(int)$usage['inventory_location_id']);
+			if ( ! $this->balances->set_quantity((int)$usage['inventory_item_id'],(int)$usage['inventory_location_id'],round($current+$quantity,4)) ) { throw new \RuntimeException( 'Unable to return inventory to stock.' ); }
+			$now=current_time('mysql',true); $user=get_current_user_id();
+			$transaction_id=$this->transactions->create(array(
+				'inventory_item_id'=>(int)$usage['inventory_item_id'],'inventory_location_id'=>(int)$usage['inventory_location_id'],'transaction_type'=>'service_call_return',
+				'quantity_change'=>$quantity,'unit_cost'=>(float)$usage['unit_cost_snapshot'],'service_call_id'=>(int)$usage['service_call_id'],'related_transaction_id'=>(int)$usage['inventory_transaction_id'],
+				'note'=>sanitize_textarea_field($note ?: 'Service Call inventory usage reversal.'),'transaction_at'=>$now,'created_at'=>$now,'created_by'=>$user ?: null,
+			));
+			if ( ! $transaction_id ) { throw new \RuntimeException( 'Unable to record inventory return.' ); }
+			$reversal_id=$this->service_call_inventory->create(array(
+				'service_call_id'=>(int)$usage['service_call_id'],'inventory_item_id'=>(int)$usage['inventory_item_id'],'inventory_location_id'=>(int)$usage['inventory_location_id'],'inventory_transaction_id'=>$transaction_id,
+				'quantity'=>-$quantity,'item_sku_snapshot'=>$usage['item_sku_snapshot'],'item_description_snapshot'=>$usage['item_description_snapshot'],
+				'unit_cost_snapshot'=>(float)$usage['unit_cost_snapshot'],'markup_percent_snapshot'=>(float)$usage['markup_percent_snapshot'],'unit_selling_price_snapshot'=>(float)$usage['unit_selling_price_snapshot'],'extended_selling_price'=>-(float)$usage['extended_selling_price'],
+				'created_at'=>$now,'updated_at'=>$now,'created_by'=>$user ?: null,'updated_by'=>$user ?: null,
+			));
+			if ( ! $reversal_id ) { throw new \RuntimeException( 'Unable to record Service Call inventory reversal.' ); }
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Return balance, ledger and usage reversal must commit atomically.
+			$wpdb->query('COMMIT');
+			return $reversal_id;
+		} catch ( \Throwable $exception ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back partial Service Call inventory reversal.
+			$wpdb->query('ROLLBACK');
 			throw $exception;
 		}
 	}
