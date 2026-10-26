@@ -91,7 +91,7 @@ final class ServiceCallRepository {
 
 	public function replace_equipment( int $service_call_id, array $equipment_ids ): bool {
 		$wpdb = $this->wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys owns this relationship table; replacement must use current relationship state.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic replacement of plugin-owned relationship rows; cache would be inappropriate.
 		if ( false === $wpdb->delete( $this->equipment_table, array( 'service_call_id' => $service_call_id ) ) ) {
 			return false;
 		}
@@ -99,7 +99,6 @@ final class ServiceCallRepository {
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		foreach ( $equipment_ids as $equipment_id ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys owns this relationship table; write is part of replacement operation.
 			if ( false === $wpdb->insert(
 				$this->equipment_table,
 				array(
@@ -113,6 +112,7 @@ final class ServiceCallRepository {
 				return false;
 			}
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return true;
 	}
 }
