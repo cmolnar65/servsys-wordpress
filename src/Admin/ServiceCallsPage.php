@@ -14,6 +14,8 @@ use ServSys\ServiceCalls\ServiceCallService;
 use ServSys\Sites\SiteRepository;
 use ServSys\ServiceCalls\ServiceCallRepository;
 use ServSys\Users\Capabilities;
+use ServSys\Users\Authorization;
+use ServSys\Users\CompanyUserRepository;
 
 final class ServiceCallsPage {
 	public function register(): void {
@@ -215,7 +217,21 @@ final class ServiceCallsPage {
 			}
 		} else { echo '<p>Select a valid customer site before associating equipment.</p>'; }
 		echo '<p><label>Service Date<br><input type="date" name="service_date" value="' . esc_attr( $call['service_date'] ) . '" required></label></p>';
-		echo '<p><label>Technician<br>'; wp_dropdown_users( array( 'name' => 'technician_user_id', 'selected' => (int) $call['technician_user_id'], 'show_option_none' => 'Unassigned' ) ); echo '</label></p>';
+		echo '<p><label>Technician<br><select name="technician_user_id"><option value="0">Unassigned</option>';
+		$company_id = $customer ? (int) $customer['company_id'] : 0;
+		$technician_ids = array();
+		if ( $company_id ) {
+			foreach ( ( new CompanyUserRepository() )->for_company( $company_id ) as $membership ) {
+				if ( ! empty( $membership['active'] ) ) { $technician_ids[] = (int) $membership['user_id']; }
+			}
+			foreach ( get_users( array( 'role' => 'administrator', 'fields' => 'ID' ) ) as $administrator_id ) { $technician_ids[] = (int) $administrator_id; }
+		}
+		foreach ( array_unique( $technician_ids ) as $technician_id ) {
+			if ( ! Authorization::can_access_company( $company_id, $technician_id ) ) { continue; }
+			$user = get_userdata( $technician_id ); if ( ! $user ) { continue; }
+			echo '<option value="' . esc_attr( (string) $technician_id ) . '" ' . selected( (int) $call['technician_user_id'], $technician_id, false ) . '>' . esc_html( $user->display_name ) . '</option>';
+		}
+		echo '</select></label></p>';
 		echo '<p><label>Status<br><select name="status">';
 		foreach ( array( 'open' => 'Open', 'completed' => 'Completed', 'cancelled' => 'Cancelled' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '" ' . selected( $call['status'], $value, false ) . '>' . esc_html( $label ) . '</option>'; }
 		echo '</select></label></p>';
