@@ -12,6 +12,7 @@ use ServSys\Customers\CustomerTypeRepository;
 use ServSys\Customers\NoteRepository;
 use ServSys\Customers\NoteService;
 use ServSys\Equipment\EquipmentRepository;
+use ServSys\ServiceCalls\ServiceCallRepository;
 use ServSys\Sites\SiteRepository;
 use ServSys\Sites\SiteService;
 use ServSys\Users\Capabilities;
@@ -280,7 +281,25 @@ final class CustomersPage {
 			echo '</tbody></table>';
 		}
 
-		echo '<hr><h2>Site Activity</h2><p>No site activity modules are available yet. Future service calls, inspections, agreements, and other site activity will be shown here.</p>';
+		echo '<hr><h2>Service Calls</h2>';
+		if ( current_user_can( Capabilities::CREATE_SERVICE_CALLS ) ) {
+			$add_call_url = admin_url( 'admin.php?page=servsys-service-calls&action=edit&source=site&customer_id=' . $customer_id . '&site_id=' . $site_id );
+			echo '<p><a class="button button-primary" href="' . esc_url( $add_call_url ) . '">Add Service Call</a></p>';
+		}
+		if ( current_user_can( Capabilities::VIEW_SERVICE_CALLS ) ) {
+			$service_calls = ( new ServiceCallRepository() )->for_site( $customer_id, $site_id, 10 );
+			if ( ! $service_calls ) {
+				echo '<p>No service calls have been recorded for this site.</p>';
+			} else {
+				echo '<table class="widefat striped"><thead><tr><th>Call #</th><th>Date</th><th>Technician</th><th>Status</th><th>Follow-up</th></tr></thead><tbody>';
+				foreach ( $service_calls as $call ) {
+					$call_url = admin_url( 'admin.php?page=servsys-service-calls&service_call_id=' . (int) $call['id'] );
+					$technician = $call['technician_user_id'] ? get_userdata( (int) $call['technician_user_id'] ) : null;
+					echo '<tr><td><a href="' . esc_url( $call_url ) . '">' . esc_html( $call['call_number'] ?: (string) $call['id'] ) . '</a></td><td>' . esc_html( $call['service_date'] ) . '</td><td>' . esc_html( $technician ? $technician->display_name : '' ) . '</td><td>' . esc_html( ucfirst( $call['status'] ) ) . '</td><td>' . ( $call['follow_up_required'] ? esc_html( $call['follow_up_date'] ?: 'Required' ) : '&mdash;' ) . '</td></tr>';
+				}
+				echo '</tbody></table>';
+			}
+		}
 		echo '<p><a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer</a></p>';
 	}
 

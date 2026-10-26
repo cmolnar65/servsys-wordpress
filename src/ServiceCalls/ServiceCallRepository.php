@@ -48,6 +48,23 @@ final class ServiceCallRepository {
 		return $wpdb->get_results( $wpdb->prepare( $sql, ...$args ), ARRAY_A );
 	}
 
+
+	public function for_site( int $customer_id, int $site_id, int $limit = 10 ): array {
+		$wpdb = $this->wpdb;
+		$limit = max( 1, min( 100, $limit ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE customer_id = %d AND site_id = %d ORDER BY service_date DESC, id DESC LIMIT %d',
+				$this->table,
+				$customer_id,
+				$site_id,
+				$limit
+			),
+			ARRAY_A
+		);
+	}
+
 	public function find_with_context( int $id ) {
 		$wpdb      = $this->wpdb;
 		$customers = $wpdb->prefix . 'servsys_customers';
