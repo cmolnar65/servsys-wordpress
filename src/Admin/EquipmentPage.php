@@ -134,7 +134,7 @@ final class EquipmentPage {
 				continue;
 			}
 			$label = $type['name'] . ( $type['active'] ? '' : ' (Inactive)' );
-			echo '<option value="' . (int) $type['id'] . '" ' . selected( $selected, (int) $type['id'], false ) . '>' . esc_html( $label ) . '</option>';
+			echo '<option value="' . esc_attr( (string) (int) $type['id'] ) . '" ' . selected( $selected, (int) $type['id'], false ) . '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select></label></p>';
 	}
@@ -154,8 +154,8 @@ final class EquipmentPage {
 			$form_id = 'servsys-equipment-type-' . (int) $type['id'];
 			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			wp_nonce_field( 'servsys_save_equipment_type' );
-			echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '"><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
-			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td><td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td><td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
+			echo '<input type="hidden" name="action" value="servsys_save_equipment_type"><input type="hidden" name="type_id" value="' . esc_attr( (string) (int) $type['id'] ) . '"><input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
+			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . esc_attr( (string) (int) $type['sort_order'] ) . '" class="small-text"></td><td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td><td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
 		}
 		echo '</tbody></table><h2>Add Equipment Type</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_equipment_type' );
