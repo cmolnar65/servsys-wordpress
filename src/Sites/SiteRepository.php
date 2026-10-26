@@ -2,6 +2,8 @@
 
 namespace ServSys\Sites;
 
+use ServSys\Companies\CompanyContext;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -20,17 +22,17 @@ final class SiteRepository {
 		if ( $include_inactive ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
-		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
+		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND customer_id = %d ORDER BY name, city, address1', $this->table, CompanyContext::current_company_id(), $customer_id ), ARRAY_A );
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
-		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE customer_id = %d AND active = 1 ORDER BY name, city, address1', $this->table, $customer_id ), ARRAY_A );
+		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND customer_id = %d AND active = 1 ORDER BY name, city, address1', $this->table, CompanyContext::current_company_id(), $customer_id ), ARRAY_A );
 	}
 
 	public function find( int $id ) {
 		$wpdb = $this->wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_row(
-			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d AND company_id = %d', $this->table, $id, CompanyContext::current_company_id() ),
 			ARRAY_A
 		);
 	}
