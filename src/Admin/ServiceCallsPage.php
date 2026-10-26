@@ -194,15 +194,28 @@ final class ServiceCallsPage {
 		if ( 'site' === $source || $id ) {
 			echo '<input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . esc_attr( (string) $site_id ) . '"><p><strong>Customer:</strong> ' . esc_html( $customer ? $customer['name'] : '' ) . '<br><strong>Site:</strong> ' . esc_html( $site ? ( $site['name'] ?: $site['address1'] ) : '' ) . '</p>';
 		} else {
-			echo '<p><label>Customer<br><select name="customer_id" required><option value="">Select customer</option>';
-			foreach ( $customers as $item ) {
-				echo '<option value="' . esc_attr( (string) $item['id'] ) . '" ' . selected( $customer_id, (int) $item['id'], false ) . '>' . esc_html( $item['name'] ) . '</option>';
+			if ( ! $customer_id ) {
+				echo '</form><form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '">';
+				echo '<input type="hidden" name="page" value="servsys-service-calls"><input type="hidden" name="action" value="edit">';
+				echo '<p><label>Customer<br><select name="customer_id" required><option value="">Select customer</option>';
+				foreach ( $customers as $item ) {
+					echo '<option value="' . esc_attr( (string) $item['id'] ) . '">' . esc_html( $item['name'] ) . '</option>';
+				}
+				echo '</select></label></p>';
+				submit_button( 'Select Customer', 'secondary', '', false );
+				echo '</form>';
+				return;
 			}
-			echo '</select></label></p><p><label>Site<br><select name="site_id" required><option value="">Select site</option>';
+			echo '<input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '">';
+			echo '<p><strong>Customer:</strong> ' . esc_html( $customer ? $customer['name'] : '' ) . ' <a class="button button-small" href="' . esc_url( admin_url( 'admin.php?page=servsys-service-calls&action=edit' ) ) . '">Change Customer</a></p>';
+			echo '<p><label>Site<br><select name="site_id" required><option value="">Select site</option>';
 			foreach ( $sites as $item ) {
 				echo '<option value="' . esc_attr( (string) $item['id'] ) . '" ' . selected( $site_id, (int) $item['id'], false ) . '>' . esc_html( $item['name'] ?: $item['address1'] ) . '</option>';
 			}
-			echo '</select></label></p><p class="description">Select a customer first and reopen Add Service Call with that customer to choose one of its sites. Site-origin creation preselects both.</p>';
+			echo '</select></label></p>';
+			if ( ! $sites ) {
+				echo '<p class="description">This customer has no active sites. Add or activate a site before creating a service call.</p>';
+			}
 		}
 		echo '<h3>Equipment Serviced</h3>';
 		if ( $site_id ) {
