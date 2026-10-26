@@ -16,6 +16,7 @@ final class CompanyService {
 			'state'=>sanitize_text_field( $input['state'] ?? '' ), 'postal_code'=>sanitize_text_field( $input['postal_code'] ?? '' ),
 			'phone'=>sanitize_text_field( $input['phone'] ?? '' ), 'use_preprinted_letterhead'=>empty( $input['use_preprinted_letterhead'] ) ? 0 : 1,
 			'fiscal_year_end_month'=>$month, 'fiscal_year_end_day'=>$day, 'customer_portal_enabled'=>empty( $input['customer_portal_enabled'] ) ? 0 : 1,
+			'inventory_markup_percent'=>max( 0, (float) ( $input['inventory_markup_percent'] ?? 0 ) ),
 			'active'=>empty( $input['active'] ) ? 0 : 1, 'updated_at'=>$now, 'updated_by'=>$user ?: null,
 		);
 		if ( $id ) { if ( ! $this->repository->find_unscoped( $id ) || ! $this->repository->update( $id, $data ) ) { throw new \RuntimeException( 'Unable to update company.' ); } return $id; }
