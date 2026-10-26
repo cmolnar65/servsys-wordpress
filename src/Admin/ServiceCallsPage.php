@@ -8,7 +8,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use ServSys\Customers\CustomerRepository;
 use ServSys\Equipment\EquipmentRepository;
-use ServSys\Inventory\InventoryBalanceRepository;
 use ServSys\Inventory\InventoryItemRepository;
 use ServSys\Inventory\InventoryLocationRepository;
 use ServSys\Inventory\InventoryService;
@@ -47,6 +46,9 @@ final class ServiceCallsPage {
 		$action = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
 
 		echo '<div class="wrap"><h1>ServSys Service Calls</h1>';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only validation message returned after a nonce-protected POST.
+		$error = isset( $_GET['servsys_error'] ) ? sanitize_text_field( wp_unslash( $_GET['servsys_error'] ) ) : '';
+		if ( $error ) { echo '<div class="notice notice-error inline"><p>' . esc_html( $error ) . '</p></div>'; }
 		if ( 'edit' === $action ) {
 			$this->render_form( $id );
 		} elseif ( $id ) {
