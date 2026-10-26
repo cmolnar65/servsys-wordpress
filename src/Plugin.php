@@ -28,6 +28,7 @@ final class Plugin {
 	}
 
 	public function register_hooks(): void {
+		add_filter( 'user_has_cap', array( \ServSys\Users\Authorization::class, 'filter_user_caps' ), 20, 4 );
 		add_action( 'plugins_loaded', array( Installer::class, 'maybe_upgrade' ) );
 
 		if ( is_admin() ) {
