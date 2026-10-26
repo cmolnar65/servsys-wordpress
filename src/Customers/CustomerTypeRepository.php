@@ -24,11 +24,14 @@ final class CustomerTypeRepository {
 		$cached = wp_cache_get( $key, self::CACHE_GROUP );
 		if ( false !== $cached ) {
 			return $cached;
-		}
+		} 
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Lookup reads use ServSys plugin-owned custom tables; results are cached immediately below.
+
 		$results = $include_inactive
 			? $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A )
 			: $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
 		wp_cache_set( $key, $results, self::CACHE_GROUP );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
 		return $results;
 	}
 
@@ -39,6 +42,7 @@ final class CustomerTypeRepository {
 		if ( false !== $cached ) {
 			return $cached;
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Lookup read uses a ServSys plugin-owned custom table and is cached immediately below.
 		$record = $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
