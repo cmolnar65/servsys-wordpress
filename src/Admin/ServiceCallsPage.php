@@ -211,7 +211,7 @@ final class ServiceCallsPage {
 				echo '<p><label><input type="checkbox" name="equipment_ids[]" value="' . esc_attr( (string) $item['id'] ) . '" ' . checked( in_array( (int) $item['id'], $selected_equipment, true ), true, false ) . '> ' . esc_html( $label ) . '</label></p>';
 			}
 			if ( current_user_can( Capabilities::CREATE_EQUIPMENT ) ) {
-				echo '<p><button class="button" type="submit" name="servsys_add_equipment" value="1" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formmethod="post">Add New Equipment</button></p>';
+				echo '<p><button class="button" type="submit" name="action" value="servsys_service_call_add_equipment" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" formmethod="post">Add New Equipment</button></p>';
 			}
 		} else { echo '<p>Select a valid customer site before associating equipment.</p>'; }
 		echo '<p><label>Service Date<br><input type="date" name="service_date" value="' . esc_attr( $call['service_date'] ) . '" required></label></p>';
@@ -289,7 +289,7 @@ final class ServiceCallsPage {
 	}
 
 	private function row( string $label, string $value ): void {
-		echo '<tr><th scope="row" style="width:180px">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
+		echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
 	}
 
 	private function section( string $heading, $value ): void {
