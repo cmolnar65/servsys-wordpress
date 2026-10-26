@@ -27,7 +27,7 @@ final class EquipmentService {
 
 		$customer = $this->customer_repository->find( $customer_id );
 		$site     = $this->site_repository->find( $site_id );
-		if ( ! $customer || ! $site || (int) $site['customer_id'] !== $customer_id ) {
+		if ( ! $customer || ! $site || (int) $site['customer_id'] !== $customer_id || (int) $site['company_id'] !== (int) $customer['company_id'] ) {
 			throw new \InvalidArgumentException( 'Selected site does not belong to this customer.' );
 		}
 		if ( ! $id && ( empty( $customer['active'] ) || empty( $site['active'] ) ) ) {
@@ -44,6 +44,7 @@ final class EquipmentService {
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$data = array(
+			'company_id'     => (int) $customer['company_id'],
 			'customer_id'    => $customer_id,
 			'site_id'        => $site_id,
 			'equipment_type' => $type,
