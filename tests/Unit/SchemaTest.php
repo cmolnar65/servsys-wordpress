@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 use ServSys\Database\Schema;
 
 final class SchemaTest extends TestCase {
-	public function test_phase_six_tables_use_wordpress_prefix(): void {
+	public function test_phase_seven_tables_use_wordpress_prefix(): void {
 		$wpdb = new class {
 			public $prefix = 'test_';
 			public function get_charset_collate(): string {
@@ -22,6 +22,9 @@ final class SchemaTest extends TestCase {
 				'test_servsys_sites',
 				'test_servsys_customer_notes',
 				'test_servsys_equipment',
+				'test_servsys_service_calls',
+				'test_servsys_service_call_equipment',
+				'test_servsys_service_call_notes',
 			),
 			array_keys( $tables )
 		);
@@ -48,5 +51,28 @@ final class SchemaTest extends TestCase {
 		$this->assertStringContainsString( 'equipment_type_id bigint(20) unsigned NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringContainsString( 'refrigerant_type varchar(50) NULL', $tables['wp_servsys_equipment'] );
 		$this->assertStringNotContainsString( 'servsync', $tables['wp_servsys_equipment'] );
+		$this->assertStringContainsString( 'customer_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_service_calls'] );
+		$this->assertStringContainsString( 'site_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_service_calls'] );
+		$this->assertStringContainsString( 'legacy_crecnum bigint(20) unsigned NULL', $tables['wp_servsys_service_calls'] );
+		$this->assertStringContainsString( 'legacy_callslip varchar(100) NULL', $tables['wp_servsys_service_calls'] );
+		$this->assertStringContainsString( 'call_number varchar(50) NULL', $tables['wp_servsys_service_calls'] );
+		$this->assertStringContainsString( 'technician_user_id bigint(20) unsigned NULL', $tables['wp_servsys_service_calls'] );
+		$this->assertStringNotContainsString( 'servsync', $tables['wp_servsys_service_calls'] );
+		$this->assertStringContainsString( 'UNIQUE KEY service_call_equipment (service_call_id,equipment_id)', $tables['wp_servsys_service_call_equipment'] );
+		$this->assertStringContainsString( 'service_call_id bigint(20) unsigned NOT NULL', $tables['wp_servsys_service_call_notes'] );
+	}
+
+	public function test_phase_seven_call_number_schema_supports_year_and_record_id_format(): void {
+		$wpdb = new class {
+			public $prefix = 'wp_';
+			public function get_charset_collate(): string {
+				return 'DEFAULT CHARACTER SET utf8mb4';
+			}
+		};
+
+		$table = Schema::tables( $wpdb )['wp_servsys_service_calls'];
+		$this->assertStringContainsString( 'id bigint(20) unsigned NOT NULL AUTO_INCREMENT', $table );
+		$this->assertStringContainsString( 'call_number varchar(50) NULL', $table );
+		$this->assertStringContainsString( 'UNIQUE KEY call_number (call_number)', $table );
 	}
 }
