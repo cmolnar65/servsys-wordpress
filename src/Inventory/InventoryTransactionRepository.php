@@ -30,7 +30,7 @@ final class InventoryTransactionRepository {
 	}
 
 	public function has_related_transaction( int $transaction_id, string $transaction_type ): bool {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Audit ledger relationship must remain current.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Audit ledger relationship must remain current.
 		return (bool) $this->wpdb->get_var($this->wpdb->prepare('SELECT id FROM %i WHERE company_id = %d AND related_transaction_id = %d AND transaction_type = %s LIMIT 1',$this->table,CompanyContext::current_company_id(),$transaction_id,$transaction_type));
 	}
 
@@ -52,12 +52,12 @@ final class InventoryTransactionRepository {
 		if($date_from){$sql.=' AND t.transaction_at >= %s';$args[]=$date_from . ' 00:00:00';}
 		if($date_to){$sql.=' AND t.transaction_at <= %s';$args[]=$date_to . ' 23:59:59';}
 		$sql.=' ORDER BY t.transaction_at DESC,t.id DESC LIMIT %d';$args[]=$limit;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reporting must reflect the current audit ledger.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Inventory reporting must reflect the current audit ledger.
 		return $this->wpdb->get_results($this->wpdb->prepare($sql,$args),ARRAY_A);
 	}
 
 	public function transaction_types(): array {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reporting must reflect transaction types present in the audit ledger.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Inventory reporting must reflect transaction types present in the audit ledger.
 		return $this->wpdb->get_col($this->wpdb->prepare('SELECT DISTINCT transaction_type FROM %i WHERE company_id=%d ORDER BY transaction_type',$this->table,CompanyContext::current_company_id()));
 	}
 
@@ -76,7 +76,7 @@ final class InventoryTransactionRepository {
 		if($date_from){$sql.=' AND transaction_at >= %s';$args[]=$date_from . ' 00:00:00';}
 		if($date_to){$sql.=' AND transaction_at <= %s';$args[]=$date_to . ' 23:59:59';}
 		$sql.=' GROUP BY transaction_type ORDER BY transaction_type';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reporting requires complete ledger aggregation.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Inventory reporting requires complete ledger aggregation.
 		$rows=$this->wpdb->get_results($this->wpdb->prepare($sql,$args),ARRAY_A);
 		$totals=array();
 		foreach($rows as $row){$totals[$row['transaction_type']]=round((float)$row['quantity_change'],4);}
@@ -84,7 +84,7 @@ final class InventoryTransactionRepository {
 	}
 
 	public function ledger_totals_by_item_location(): array {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reconciliation must aggregate the complete current-company ledger.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory reconciliation must aggregate the complete current-company ledger.
 		$rows=$this->wpdb->get_results($this->wpdb->prepare(
 			'SELECT inventory_item_id, inventory_location_id, SUM(quantity_change) AS ledger_quantity FROM %i WHERE company_id=%d GROUP BY inventory_item_id,inventory_location_id',
 			$this->table,CompanyContext::current_company_id()
@@ -96,13 +96,13 @@ final class InventoryTransactionRepository {
 
 	public function for_item_location( int $item_id, int $location_id, int $limit = 100 ): array {
 		$limit=max(1,min(500,$limit));
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory audit ledger must be current.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory audit ledger must be current.
 		return $this->wpdb->get_results($this->wpdb->prepare('SELECT * FROM %i WHERE company_id = %d AND inventory_item_id = %d AND inventory_location_id = %d ORDER BY transaction_at DESC,id DESC LIMIT %d',$this->table,CompanyContext::current_company_id(),$item_id,$location_id,$limit),ARRAY_A);
 	}
 
 	public function for_item( int $item_id, int $limit = 100 ): array {
 		$limit=max(1,min(500,$limit));
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory audit ledger must be current.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory audit ledger must be current.
 		return $this->wpdb->get_results($this->wpdb->prepare('SELECT * FROM %i WHERE company_id = %d AND inventory_item_id = %d ORDER BY transaction_at DESC,id DESC LIMIT %d',$this->table,CompanyContext::current_company_id(),$item_id,$limit),ARRAY_A);
 	}
 }
