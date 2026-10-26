@@ -45,35 +45,45 @@ final class InventoryService {
 	}
 
 	public function adjust_stock( int $item_id, int $location_id, float $quantity_change, string $transaction_type, string $note = '', int $service_call_id = 0, int $related_transaction_id = 0 ): int {
+		$quantity_change = round( $quantity_change, 4 );
 		if ( 0.0 === $quantity_change ) { throw new \InvalidArgumentException( 'Inventory quantity change cannot be zero.' ); }
 		$allowed=array('initial','receipt','adjustment','transfer_in','transfer_out','service_call_usage','service_call_return');
 		if ( ! in_array($transaction_type,$allowed,true) ) { throw new \InvalidArgumentException( 'Invalid inventory transaction type.' ); }
 		$item=$this->require_item($item_id);
-		$this->require_location($location_id);
-		$current=$this->balances->quantity($item_id,$location_id);
-		$new_quantity=$current+$quantity_change;
-		if ( $new_quantity < 0 ) { throw new \InvalidArgumentException( 'Inventory quantity cannot be reduced below zero.' ); }
+		$location=$this->require_location($location_id);
+		if ( empty( $item['active'] ) || empty( $location['active'] ) ) { throw new \InvalidArgumentException( 'New inventory activity requires an active item and active location.' ); }
 
-		$now=current_time('mysql',true); $user=get_current_user_id();
-		if ( ! $this->balances->set_quantity($item_id,$location_id,$new_quantity) ) { throw new \RuntimeException( 'Unable to update inventory balance.' ); }
-		$transaction_id=$this->transactions->create(array(
-			'inventory_item_id'=>$item_id,
-			'inventory_location_id'=>$location_id,
-			'transaction_type'=>$transaction_type,
-			'quantity_change'=>$quantity_change,
-			'unit_cost'=>(float)$item['unit_cost'],
-			'service_call_id'=>$service_call_id ?: null,
-			'related_transaction_id'=>$related_transaction_id ?: null,
-			'note'=>sanitize_textarea_field($note),
-			'transaction_at'=>$now,
-			'created_at'=>$now,
-			'created_by'=>$user ?: null,
-		));
-		if ( ! $transaction_id ) {
-			$this->balances->set_quantity($item_id,$location_id,$current);
-			throw new \RuntimeException( 'Unable to record inventory transaction.' );
+		$wpdb = $GLOBALS['wpdb'];
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Inventory balance and audit ledger must commit atomically.
+		$wpdb->query( 'START TRANSACTION' );
+		try {
+			$current=$this->balances->lock_quantity($item_id,$location_id);
+			$new_quantity=round($current+$quantity_change,4);
+			if ( $new_quantity < 0 ) { throw new \InvalidArgumentException( 'Inventory quantity cannot be reduced below zero.' ); }
+			$now=current_time('mysql',true); $user=get_current_user_id();
+			if ( ! $this->balances->set_quantity($item_id,$location_id,$new_quantity) ) { throw new \RuntimeException( 'Unable to update inventory balance.' ); }
+			$transaction_id=$this->transactions->create(array(
+				'inventory_item_id'=>$item_id,
+				'inventory_location_id'=>$location_id,
+				'transaction_type'=>$transaction_type,
+				'quantity_change'=>$quantity_change,
+				'unit_cost'=>(float)$item['unit_cost'],
+				'service_call_id'=>$service_call_id ?: null,
+				'related_transaction_id'=>$related_transaction_id ?: null,
+				'note'=>sanitize_textarea_field($note),
+				'transaction_at'=>$now,
+				'created_at'=>$now,
+				'created_by'=>$user ?: null,
+			));
+			if ( ! $transaction_id ) { throw new \RuntimeException( 'Unable to record inventory transaction.' ); }
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Inventory balance and audit ledger must commit atomically.
+			$wpdb->query( 'COMMIT' );
+			return $transaction_id;
+		} catch ( \Throwable $exception ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Roll back any partial inventory quantity or ledger change.
+			$wpdb->query( 'ROLLBACK' );
+			throw $exception;
 		}
-		return $transaction_id;
 	}
 
 	public function transfer_stock( int $item_id, int $from_location_id, int $to_location_id, float $quantity, string $note = '' ): array {
