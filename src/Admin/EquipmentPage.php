@@ -102,13 +102,15 @@ final class EquipmentPage {
 		$item['active'] = isset( $item['active'] ) ? $item['active'] : 1;
 		$list_url       = admin_url( 'admin.php?page=servsys-equipment' );
 		$customer_url   = admin_url( 'admin.php?page=servsys&customer_id=' . $customer_id . '&site_id=' . $site_id . '#servsys-site-' . $site_id );
+		$site_url       = admin_url( 'admin.php?page=servsys&action=view-site&customer_id=' . $customer_id . '&site_id=' . $site_id );
 		$from_site      = 'site' === $source;
+		$return_url     = $from_site ? $site_url : $customer_url;
 
 		echo '<p>';
 		if ( ! $from_site ) {
 			echo '<a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> ';
 		}
-		echo '<a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer Site</a></p>';
+		echo '<a class="button" href="' . esc_url( $return_url ) . '">&larr; Return to ' . ( $from_site ? 'Site' : 'Customer Site' ) . '</a></p>';
 		echo '<h2>' . ( $equipment_id ? 'Edit Equipment' : 'Add Equipment' ) . '</h2>';
 		echo '<p><strong>Customer:</strong> ' . esc_html( $customer['name'] ) . '<br><strong>Site:</strong> ' . esc_html( $site['name'] ?: $site['address1'] ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -129,7 +131,7 @@ final class EquipmentPage {
 		if ( ! $from_site ) {
 			echo '<a class="button" href="' . esc_url( $list_url ) . '">&larr; Return to Equipment List</a> ';
 		}
-		echo '<a class="button" href="' . esc_url( $customer_url ) . '">&larr; Return to Customer Site</a></p>';
+		echo '<a class="button" href="' . esc_url( $return_url ) . '">&larr; Return to ' . ( $from_site ? 'Site' : 'Customer Site' ) . '</a></p>';
 	}
 
 	private function equipment_type_select( int $selected ): void {

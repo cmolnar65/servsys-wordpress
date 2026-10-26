@@ -30,6 +30,9 @@ final class EquipmentService {
 		if ( ! $customer || ! $site || (int) $site['customer_id'] !== $customer_id ) {
 			throw new \InvalidArgumentException( 'Selected site does not belong to this customer.' );
 		}
+		if ( ! $id && ( empty( $customer['active'] ) || empty( $site['active'] ) ) ) {
+			throw new \InvalidArgumentException( 'Equipment cannot be added to an inactive customer or site.' );
+		}
 
 		$type_id = isset( $input['equipment_type_id'] ) ? absint( $input['equipment_type_id'] ) : 0;
 		$type_record = $type_id ? ( new EquipmentTypeRepository() )->find( $type_id ) : null;

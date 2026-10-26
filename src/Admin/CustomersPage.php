@@ -215,10 +215,14 @@ final class CustomersPage {
 			echo '</td></tr>';
 			$site_equipment = ( new EquipmentRepository() )->for_site( (int) $site['id'], true );
 			if ( $site_equipment ) {
-				echo '<tr><td colspan="6"><strong>Equipment:</strong><table class="widefat striped" style="margin-top:8px"><thead><tr><th>Type</th><th>Brand / Model</th><th>Serial</th><th>Filter</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+				echo '<tr><td colspan="6"><strong>Equipment:</strong><table class="widefat striped" style="margin-top:8px"><thead><tr><th>Type</th><th>Brand / Model</th><th>Serial</th><th>Filter</th><th>Refrigerant</th><th>Status</th><th>Action</th></tr></thead><tbody>';
 				foreach ( $site_equipment as $item ) {
 					$item_url = admin_url( 'admin.php?page=servsys-equipment&action=edit&source=site&equipment_id=' . (int) $item['id'] . '&customer_id=' . $customer_id . '&site_id=' . (int) $site['id'] );
-					echo '<tr><td>' . esc_html( $item['equipment_type'] ) . '</td><td>' . esc_html( trim( $item['brand'] . ' ' . $item['model_number'] ) ) . '</td><td>' . esc_html( $item['serial_number'] ) . '</td><td>' . esc_html( $item['filter'] ) . '</td><td>' . ( $item['active'] ? 'Active' : 'Inactive' ) . '</td><td><a class="button button-small" href="' . esc_url( $item_url ) . '">Edit</a></td></tr>';
+					echo '<tr><td>' . esc_html( $item['equipment_type'] ) . '</td><td>' . esc_html( trim( $item['brand'] . ' ' . $item['model_number'] ) ) . '</td><td>' . esc_html( $item['serial_number'] ) . '</td><td>' . esc_html( $item['filter'] ) . '</td><td>' . esc_html( $item['refrigerant_type'] ) . '</td><td>' . ( $item['active'] ? 'Active' : 'Inactive' ) . '</td><td>';
+					if ( current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
+						echo '<a class="button button-small" href="' . esc_url( $item_url ) . '">Edit</a>';
+					}
+					echo '</td></tr>';
 				}
 				echo '</tbody></table></td></tr>';
 			}
