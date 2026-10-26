@@ -35,6 +35,7 @@ final class Installer {
 
 		self::seed_installation_company( $wpdb );
 		self::backfill_company_ownership( $wpdb );
+		self::seed_wordpress_administrators( $wpdb );
 		self::seed_customer_types( $wpdb );
 		self::seed_equipment_types( $wpdb );
 		self::preserve_equipment_types( $wpdb );
@@ -73,6 +74,18 @@ final class Installer {
 			$wpdb->query( $wpdb->prepare( 'UPDATE %i SET company_id = 1 WHERE company_id IS NULL OR company_id = 0', $table ) );
 		}
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function seed_wordpress_administrators( $wpdb ): void {
+		$table = $wpdb->prefix . 'servsys_company_users';
+		$now = current_time( 'mysql', true );
+		foreach ( get_users( array( 'role' => 'administrator', 'fields' => 'ID' ) ) as $user_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Upgrade-safe seed of plugin-owned authorization data.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE company_id = %d AND user_id = %d', $table, 1, $user_id ) );
+			if ( ! $exists ) {
+				$wpdb->insert( $table, array( 'company_id'=>1, 'user_id'=>$user_id, 'is_company_admin'=>1, 'active'=>1, 'permissions'=>'[]', 'created_at'=>$now, 'updated_at'=>$now, 'created_by'=>$user_id, 'updated_by'=>$user_id ) );
+			}
+		}
 	}
 
 	private static function seed_customer_types( $wpdb ): void {
