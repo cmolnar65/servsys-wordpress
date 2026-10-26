@@ -11,9 +11,9 @@ final class Phase7ServiceCallTest extends TestCase {
 
 	public function test_service_enforces_customer_site_and_equipment_ownership(): void {
 		$source = file_get_contents( dirname( __DIR__, 2 ) . '/src/ServiceCalls/ServiceCallService.php' );
-		$this->assertStringContainsString( "(int) \\$site['customer_id'] !== \\$customer_id", $source );
-		$this->assertStringContainsString( "(int) \\$equipment['customer_id'] !== \\$customer_id", $source );
-		$this->assertStringContainsString( "(int) \\$equipment['site_id'] !== \\$site_id", $source );
+		$this->assertStringContainsString( '(int) $site[\'customer_id\'] !== $customer_id', $source );
+		$this->assertStringContainsString( '(int) $equipment[\'customer_id\'] !== $customer_id', $source );
+		$this->assertStringContainsString( '(int) $equipment[\'site_id\'] !== $site_id', $source );
 		$this->assertStringContainsString( 'Selected equipment does not belong to this customer site.', $source );
 	}
 
@@ -32,7 +32,7 @@ final class Phase7ServiceCallTest extends TestCase {
 	public function test_service_call_supports_zero_to_many_equipment_relationships(): void {
 		$source = file_get_contents( dirname( __DIR__, 2 ) . '/src/ServiceCalls/ServiceCallRepository.php' );
 		$this->assertStringContainsString( 'replace_equipment', $source );
-		$this->assertStringContainsString( "'service_call_id' => \\$service_call_id", $source );
-		$this->assertStringContainsString( "'equipment_id'    => (int) \\$equipment_id", $source );
+		$this->assertStringContainsString( "'service_call_id' => $service_call_id", $source );
+		$this->assertStringContainsString( "'equipment_id'    => (int) $equipment_id", $source );
 	}
 }

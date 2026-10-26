@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 use ServSys\Users\Capabilities;
 
 final class CapabilitiesTest extends TestCase {
-	public function test_phase_six_customer_and_equipment_capabilities_are_defined(): void {
+	public function test_phase_seven_capabilities_are_defined(): void {
 		$this->assertSame(
 			array(
 				'servsys_access',
@@ -16,6 +16,9 @@ final class CapabilitiesTest extends TestCase {
 				'servsys_view_equipment',
 				'servsys_create_equipment',
 				'servsys_edit_equipment',
+				'servsys_view_service_calls',
+				'servsys_create_service_calls',
+				'servsys_edit_service_calls',
 			),
 			Capabilities::all()
 		);

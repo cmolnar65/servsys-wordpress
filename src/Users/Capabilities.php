@@ -16,6 +16,9 @@ final class Capabilities {
 	const VIEW_EQUIPMENT = 'servsys_view_equipment';
 	const CREATE_EQUIPMENT = 'servsys_create_equipment';
 	const EDIT_EQUIPMENT = 'servsys_edit_equipment';
+	const VIEW_SERVICE_CALLS = 'servsys_view_service_calls';
+	const CREATE_SERVICE_CALLS = 'servsys_create_service_calls';
+	const EDIT_SERVICE_CALLS = 'servsys_edit_service_calls';
 
 	public static function install(): void {
 		$role = get_role( 'administrator' );
@@ -40,6 +43,9 @@ final class Capabilities {
 			self::VIEW_EQUIPMENT,
 			self::CREATE_EQUIPMENT,
 			self::EDIT_EQUIPMENT,
+			self::VIEW_SERVICE_CALLS,
+			self::CREATE_SERVICE_CALLS,
+			self::EDIT_SERVICE_CALLS,
 		);
 	}
 }
