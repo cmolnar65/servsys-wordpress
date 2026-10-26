@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'SERVSYS_VERSION', '0.1.0-dev' );
-define( 'SERVSYS_DB_VERSION', 13 );
+define( 'SERVSYS_DB_VERSION', 14 );
 define( 'SERVSYS_PLUGIN_FILE', __FILE__ );
 define( 'SERVSYS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
