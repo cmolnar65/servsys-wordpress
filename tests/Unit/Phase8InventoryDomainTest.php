@@ -39,7 +39,7 @@ final class Phase8InventoryDomainTest extends TestCase {
 		$source=file_get_contents(__DIR__.'/../../src/Inventory/InventoryService.php');
 		$this->assertStringContainsString("'transfer_out'",$source);
 		$this->assertStringContainsString("'transfer_in'",$source);
-		$this->assertStringContainsString("'related_transaction_id'=>$related_transaction_id",$source);
+		$this->assertStringContainsString("'related_transaction_id'=>\$related_transaction_id",$source);
 	}
 
 	public function test_service_call_usage_is_a_supported_domain_transaction_type(): void {
