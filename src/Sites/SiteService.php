@@ -2,6 +2,8 @@
 
 namespace ServSys\Sites;
 
+use ServSys\Customers\CustomerRepository;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -18,6 +20,11 @@ final class SiteService {
 			throw new \InvalidArgumentException( 'Customer is required.' );
 		}
 
+		$customer = ( new CustomerRepository() )->find( $customer_id );
+		if ( ! $customer ) {
+			throw new \InvalidArgumentException( 'Customer does not belong to the current company.' );
+		}
+
 		foreach ( array( 'address1', 'city', 'state', 'postal_code' ) as $required ) {
 			if ( empty( $input[ $required ] ) ) {
 				throw new \InvalidArgumentException( 'Site address, city, state, and postal code are required.' );
@@ -27,6 +34,7 @@ final class SiteService {
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$data = array(
+			'company_id'  => (int) $customer['company_id'],
 			'customer_id' => $customer_id,
 			'name'        => isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : null,
 			'address1'    => sanitize_text_field( $input['address1'] ),
