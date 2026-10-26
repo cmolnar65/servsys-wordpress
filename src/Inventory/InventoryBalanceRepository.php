@@ -16,13 +16,13 @@ final class InventoryBalanceRepository {
 	}
 
 	public function find( int $item_id, int $location_id ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory balance must be current.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory balance must be current.
 		return $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND inventory_item_id = %d AND inventory_location_id = %d', $this->table, CompanyContext::current_company_id(), $item_id, $location_id ), ARRAY_A );
 	}
 
 	public function lock_quantity( int $item_id, int $location_id ): float {
 		$company_id = CompanyContext::current_company_id();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Row lock is required for atomic inventory quantity changes.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Row lock is required for atomic inventory quantity changes.
 		$row = $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND inventory_item_id = %d AND inventory_location_id = %d FOR UPDATE', $this->table, $company_id, $item_id, $location_id ), ARRAY_A );
 		if ( $row ) {
 			return (float) $row['quantity_on_hand'];
@@ -30,7 +30,7 @@ final class InventoryBalanceRepository {
 		$now = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$this->wpdb->insert( $this->table, array( 'company_id'=>$company_id, 'inventory_item_id'=>$item_id, 'inventory_location_id'=>$location_id, 'quantity_on_hand'=>0, 'updated_at'=>$now, 'updated_by'=>$user ?: null ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Lock the balance row just created or concurrently created.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Lock the balance row just created or concurrently created.
 		$row = $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND inventory_item_id = %d AND inventory_location_id = %d FOR UPDATE', $this->table, $company_id, $item_id, $location_id ), ARRAY_A );
 		if ( ! $row ) {
 			throw new \RuntimeException( 'Unable to lock inventory balance.' );
@@ -46,7 +46,7 @@ final class InventoryBalanceRepository {
 	public function report_rows(): array {
 		$items=$this->wpdb->prefix . 'servsys_inventory_items';
 		$locations=$this->wpdb->prefix . 'servsys_inventory_locations';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Inventory reporting must reflect current quantities.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Inventory reporting must reflect current quantities.
 		return $this->wpdb->get_results($this->wpdb->prepare(
 			'SELECT b.*, i.sku AS item_sku, i.description AS item_description, i.unit_cost, i.reorder_quantity, i.active AS item_active, l.name AS location_name, l.active AS location_active FROM %i b INNER JOIN %i i ON i.id=b.inventory_item_id AND i.company_id=b.company_id INNER JOIN %i l ON l.id=b.inventory_location_id AND l.company_id=b.company_id WHERE b.company_id=%d ORDER BY i.description,i.sku,l.name',
 			$this->table,$items,$locations,CompanyContext::current_company_id()
