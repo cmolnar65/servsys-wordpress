@@ -36,8 +36,17 @@ final class CompaniesPage {
 		echo '<p><label><input type="checkbox" name="use_preprinted_letterhead" value="1" ' . checked( (int)$c['use_preprinted_letterhead'],1,false ) . '> Use pre-printed letterhead (suppress logo and tagline on printed documents)</label></p>';
 		echo '<p><label>Fiscal Year End Month <input class="small-text" type="number" min="1" max="12" name="fiscal_year_end_month" value="' . esc_attr( (string)$c['fiscal_year_end_month'] ) . '"></label> <label>Day <input class="small-text" type="number" min="1" max="31" name="fiscal_year_end_day" value="' . esc_attr( (string)$c['fiscal_year_end_day'] ) . '"></label></p>';
 		echo '<p><label><input type="checkbox" name="customer_portal_enabled" value="1" ' . checked( (int)$c['customer_portal_enabled'],1,false ) . '> Customer Portal Enabled (reserved for future customer-login functionality)</label></p><p><label><input type="checkbox" name="active" value="1" ' . checked( (int)$c['active'],1,false ) . '> Active</label></p>';
+		$current_admin_user_id = 0;
+		if ( $c['id'] ) {
+			foreach ( ( new CompanyUserRepository() )->for_company( (int) $c['id'] ) as $membership ) {
+				if ( ! empty( $membership['active'] ) && ! empty( $membership['is_company_admin'] ) ) {
+					$current_admin_user_id = (int) $membership['user_id'];
+					break;
+				}
+			}
+		}
 		echo '<h3>Company Administrator</h3><p>WordPress Administrators assign the ServSys Company Administrator. Company Administrators manage users only inside this company.</p><p><label>WordPress User<br><select name="company_admin_user_id"><option value="">No change</option>';
-		foreach ( get_users( array( 'orderby'=>'display_name' ) ) as $user ) { echo '<option value="' . esc_attr((string)$user->ID) . '">' . esc_html($user->display_name . ' (' . $user->user_login . ')') . '</option>'; }
+		foreach ( get_users( array( 'orderby'=>'display_name' ) ) as $user ) { echo '<option value="' . esc_attr((string)$user->ID) . '"' . selected( $current_admin_user_id, (int) $user->ID, false ) . '>' . esc_html($user->display_name . ' (' . $user->user_login . ')') . '</option>'; }
 		echo '</select></label></p>';
 		submit_button( $c['id'] ? 'Save Company':'Create Company' ); echo '</form><p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-companies' ) ) . '">&larr; Return to Companies</a></p>';
 	}
