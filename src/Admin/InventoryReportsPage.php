@@ -104,7 +104,7 @@ final class InventoryReportsPage {
 		foreach($rows as $row){
 			$user=!empty($row['created_by'])?get_userdata((int)$row['created_by']):null;
 			$service_call=!empty($row['service_call_id']) ? '<a href="' . esc_url(admin_url('admin.php?page=servsys-service-calls&service_call_id=' . (int)$row['service_call_id'])) . '">' . esc_html((string)$row['service_call_id']) . '</a>' : '';
-			echo '<tr><td>' . esc_html($row['transaction_at']) . '</td><td>' . esc_html($row['item_sku'] . ' — ' . $row['item_description']) . '</td><td>' . esc_html($row['location_name']) . '</td><td>' . esc_html(ucwords(str_replace('_',' ',$row['transaction_type']))) . '</td><td>' . esc_html($this->quantity($row['quantity_change'])) . '</td><td>' . (null===$row['unit_cost']?'':'$' . esc_html(number_format((float)$row['unit_cost'],2))) . '</td><td>' . $service_call . '</td><td>' . esc_html($row['note']) . '</td><td>' . esc_html($user?$user->display_name:'') . '</td></tr>';
+			echo '<tr><td>' . esc_html($row['transaction_at']) . '</td><td>' . esc_html($row['item_sku'] . ' — ' . $row['item_description']) . '</td><td>' . esc_html($row['location_name']) . '</td><td>' . esc_html(ucwords(str_replace('_',' ',$row['transaction_type']))) . '</td><td>' . esc_html($this->quantity($row['quantity_change'])) . '</td><td>' . (null===$row['unit_cost']?'':'$' . esc_html(number_format((float)$row['unit_cost'],2))) . '</td><td>' . wp_kses_post( $service_call ) . '</td><td>' . esc_html($row['note']) . '</td><td>' . esc_html($user?$user->display_name:'') . '</td></tr>';
 		}
 		echo '</tbody></table>';
 	}
