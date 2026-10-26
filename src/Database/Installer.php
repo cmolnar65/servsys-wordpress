@@ -45,6 +45,7 @@ final class Installer {
 	}
 
 	private static function seed_customer_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$table = $wpdb->prefix . 'servsys_customer_types';
 		$now   = current_time( 'mysql', true );
 
@@ -65,9 +66,11 @@ final class Installer {
 				);
 			}
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function seed_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$table = $wpdb->prefix . 'servsys_equipment_types';
 		$now = current_time( 'mysql', true );
 		$names = array( 'Air Conditioner', 'Air Handler', 'Boiler', 'Furnace', 'Heat Pump', 'Mini-Split', 'Package Unit', 'Water Heater', 'Other' );
@@ -77,9 +80,11 @@ final class Installer {
 				$wpdb->insert( $table, array( 'name' => $name, 'slug' => $slug, 'sort_order' => ( $order + 1 ) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
 			}
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function preserve_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$equipment = $wpdb->prefix . 'servsys_equipment';
 		$types = $wpdb->prefix . 'servsys_equipment_types';
 		$now = current_time( 'mysql', true );
@@ -93,9 +98,11 @@ final class Installer {
 				$wpdb->insert( $types, array( 'name' => $name, 'slug' => $slug, 'sort_order' => 100, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
 			}
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function merge_duplicate_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$equipment = $wpdb->prefix . 'servsys_equipment';
 		$types = $wpdb->prefix . 'servsys_equipment_types';
 		$groups = $wpdb->get_results(
@@ -117,9 +124,11 @@ final class Installer {
 				$wpdb->delete( $types, array( 'id' => $duplicate_id ) );
 			}
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function migrate_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$equipment = $wpdb->prefix . 'servsys_equipment';
 		$types = $wpdb->prefix . 'servsys_equipment_types';
 		$wpdb->query(
@@ -129,9 +138,11 @@ final class Installer {
 				$types
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function preserve_legacy_customer_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$types     = $wpdb->prefix . 'servsys_customer_types';
 		$now       = current_time( 'mysql', true );
@@ -157,9 +168,11 @@ final class Installer {
 				);
 			}
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function migrate_customer_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
 		$customers = $wpdb->prefix . 'servsys_customers';
 		$types     = $wpdb->prefix . 'servsys_customer_types';
 
@@ -170,5 +183,6 @@ final class Installer {
 				$types
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 }
