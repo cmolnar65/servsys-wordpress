@@ -40,7 +40,8 @@ final class EquipmentPage {
 		$source       = isset( $_GET['source'] ) ? sanitize_key( wp_unslash( $_GET['source'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation/search; no state change.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only return navigation; validated with wp_validate_redirect before use.
-		$return_to    = isset( $_GET['return_to'] ) ? wp_validate_redirect( rawurldecode( wp_unslash( $_GET['return_to'] ) ), '' ) : '';
+		$return_to    = isset( $_GET['return_to'] ) ? wp_validate_redirect( rawurldecode( sanitize_text_field( wp_unslash( $_GET['return_to'] ) ) ), '' ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation; no state change.
 		$edit         = isset( $_GET['action'] ) && 'edit' === sanitize_key( wp_unslash( $_GET['action'] ) );
 
 		echo '<div class="wrap"><h1>ServSys Equipment</h1>';
@@ -204,7 +205,7 @@ final class EquipmentPage {
 		$customer_id = isset( $_POST['customer_id'] ) ? absint( wp_unslash( $_POST['customer_id'] ) ) : 0;
 		$site_id     = isset( $_POST['site_id'] ) ? absint( wp_unslash( $_POST['site_id'] ) ) : 0;
 		$source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : '';
-		$return_to   = isset( $_POST['return_to'] ) ? wp_validate_redirect( wp_unslash( $_POST['return_to'] ), '' ) : '';
+		$return_to   = isset( $_POST['return_to'] ) ? wp_validate_redirect( sanitize_text_field( wp_unslash( $_POST['return_to'] ) ), '' ) : '';
 		if ( ! current_user_can( $id ? Capabilities::EDIT_EQUIPMENT : Capabilities::CREATE_EQUIPMENT ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'servsys' ) );
 		}
