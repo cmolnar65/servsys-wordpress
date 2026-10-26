@@ -9,7 +9,7 @@ use ServSys\Users\Authorization;
 use ServSys\Users\CompanyUserRepository;
 final class CompaniesPage {
 	public function register(): void { add_action( 'admin_menu', array( $this,'menu' ) ); add_action( 'admin_post_servsys_save_company', array( $this,'save' ) ); add_action( 'admin_post_servsys_switch_company', array( $this,'switch_company' ) ); add_action( 'admin_post_servsys_assign_company_admin', array( $this,'assign_company_admin' ) ); }
-	public function menu(): void { add_submenu_page( 'servsys','Companies','Companies','manage_options','servsys-companies',array( $this,'render' ) ); }
+	public function menu(): void { add_submenu_page( null,'Companies','Companies','manage_options','servsys-companies',array( $this,'render' ) ); }
 	public function render(): void {
 		if ( ! Authorization::is_wordpress_admin() ) { wp_die( esc_html__( 'Permission denied.','servsys' ) ); }
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin navigation.
