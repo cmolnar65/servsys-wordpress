@@ -16,14 +16,17 @@ final class CustomerRepository {
 	}
 
 	public function find( int $id ) {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		return $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ),
 			ARRAY_A
-		);
+		);		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 	}
 
 	public function search( string $term = '', bool $include_inactive = false ): array {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
 		$wpdb = $this->wpdb;
 		if ( '' !== $term ) {
 			$like = '%' . $wpdb->esc_like( $term ) . '%';
@@ -41,7 +44,8 @@ final class CustomerRepository {
 		if ( $include_inactive ) {
 			return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY name ASC LIMIT 250', $this->table ), ARRAY_A );
 		}
-		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY name ASC LIMIT 250', $this->table ), ARRAY_A );
+		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY name ASC LIMIT 250', $this->table ), ARRAY_A );		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 	}
 
 	public function create( array $data ): int {
