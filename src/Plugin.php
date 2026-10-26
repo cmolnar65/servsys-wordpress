@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use ServSys\Admin\CompaniesPage;
+use ServSys\Admin\ConfigurationPage;
 use ServSys\Admin\CompanyUsersPage;
 use ServSys\Admin\CustomersPage;
 use ServSys\Admin\EquipmentPage;
@@ -33,6 +34,7 @@ final class Plugin {
 
 		if ( is_admin() ) {
 			( new CustomersPage() )->register();
+			( new ConfigurationPage() )->register();
 			( new CompaniesPage() )->register();
 			( new CompanyUsersPage() )->register();
 			( new EquipmentPage() )->register();
