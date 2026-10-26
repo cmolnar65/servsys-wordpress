@@ -19,37 +19,40 @@ final class EquipmentTypeRepository {
 	}
 
 	public function all( bool $include_inactive = true ): array {
+		$wpdb = $this->wpdb;
 		$key = $include_inactive ? self::CACHE_KEY_ALL : self::CACHE_KEY_ACTIVE;
 		$cached = wp_cache_get( $key, self::CACHE_GROUP );
 		if ( false !== $cached ) {
 			return $cached;
 		}
 		$results = $include_inactive
-			? $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A )
-			: $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
+			? $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A )
+			: $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE active = 1 ORDER BY sort_order ASC, name ASC', $this->table ), ARRAY_A );
 		wp_cache_set( $key, $results, self::CACHE_GROUP );
 		return $results;
 	}
 
 	public function find( int $id ) {
+		$wpdb = $this->wpdb;
 		$key = 'equipment_type_' . $id;
 		$cached = wp_cache_get( $key, self::CACHE_GROUP );
 		if ( false !== $cached ) {
 			return $cached;
 		}
-		$record = $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ), ARRAY_A );
+		$record = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $this->table, $id ), ARRAY_A );
 		wp_cache_set( $key, $record, self::CACHE_GROUP );
 		return $record;
 	}
 
 	public function save( array $input, int $id = 0 ): int {
+		$wpdb = $this->wpdb;
 		$name = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
 		if ( '' === $name ) {
 			throw new \InvalidArgumentException( 'Equipment type name is required.' );
 		}
 		$slug = sanitize_title( $name );
-		$duplicate_id = $this->wpdb->get_var(
-			$this->wpdb->prepare(
+		$duplicate_id = $wpdb->get_var(
+			$wpdb->prepare(
 				'SELECT id FROM %i WHERE (LOWER(TRIM(name)) = LOWER(TRIM(%s)) OR slug = %s) AND id <> %d LIMIT 1',
 				$this->table,
 				$name,
@@ -70,17 +73,17 @@ final class EquipmentTypeRepository {
 			'updated_at' => $now,
 		);
 		if ( $id ) {
-			if ( false === $this->wpdb->update( $this->table, $data, array( 'id' => $id ) ) ) {
+			if ( false === $wpdb->update( $this->table, $data, array( 'id' => $id ) ) ) {
 				throw new \RuntimeException( 'Unable to update equipment type.' );
 			}
 			$this->clear_cache( $id );
 			return $id;
 		}
 		$data['created_at'] = $now;
-		if ( false === $this->wpdb->insert( $this->table, $data ) ) {
+		if ( false === $wpdb->insert( $this->table, $data ) ) {
 			throw new \RuntimeException( 'Unable to create equipment type.' );
 		}
-		$id = (int) $this->wpdb->insert_id;
+		$id = (int) $wpdb->insert_id;
 		$this->clear_cache( $id );
 		return $id;
 	}
