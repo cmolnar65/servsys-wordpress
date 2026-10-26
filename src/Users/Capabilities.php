@@ -29,6 +29,8 @@ final class Capabilities {
 	const MANAGE_FLAT_RATE = 'servsys_manage_flat_rate';
 	const VIEW_PM_PLANS = 'servsys_view_pm_plans';
 	const MANAGE_PM_PLANS = 'servsys_manage_pm_plans';
+	const VIEW_PM_AGREEMENTS = 'servsys_view_pm_agreements';
+	const MANAGE_PM_AGREEMENTS = 'servsys_manage_pm_agreements';
 
 	public static function install(): void {
 		$role = get_role( 'administrator' );
@@ -49,7 +51,8 @@ final class Capabilities {
 			self::CREATE_EQUIPMENT, self::EDIT_EQUIPMENT, self::VIEW_SERVICE_CALLS,
 			self::CREATE_SERVICE_CALLS, self::EDIT_SERVICE_CALLS, self::VIEW_INVENTORY,
 			self::MANAGE_INVENTORY, self::ADJUST_INVENTORY, self::USE_INVENTORY, self::VIEW_FLAT_RATE,
-			self::MANAGE_FLAT_RATE, self::VIEW_PM_PLANS, self::MANAGE_PM_PLANS
+			self::MANAGE_FLAT_RATE, self::VIEW_PM_PLANS, self::MANAGE_PM_PLANS,
+			self::VIEW_PM_AGREEMENTS, self::MANAGE_PM_AGREEMENTS
 		);
 	}
 
@@ -77,6 +80,8 @@ final class Capabilities {
 			self::MANAGE_FLAT_RATE,
 			self::VIEW_PM_PLANS,
 			self::MANAGE_PM_PLANS,
+			self::VIEW_PM_AGREEMENTS,
+			self::MANAGE_PM_AGREEMENTS,
 		);
 	}
 }
