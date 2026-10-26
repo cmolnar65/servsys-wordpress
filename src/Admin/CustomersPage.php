@@ -177,7 +177,7 @@ final class CustomersPage {
 				continue;
 			}
 			$label = $type['name'] . ( $type['active'] ? '' : ' (Inactive)' );
-			echo '<option value="' . (int) $type['id'] . '" ' . selected( $selected, (int) $type['id'], false ) . '>' . esc_html( $label ) . '</option>';
+			echo '<option value="' . esc_attr( (string) (int) $type['id'] ) . '" ' . selected( $selected, (int) $type['id'], false ) . '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select></label></p>';
 	}
@@ -276,7 +276,7 @@ final class CustomersPage {
 		$active  = isset( $site['active'] ) ? (int) $site['active'] : 1;
 		echo '<h3>' . ( $editing ? 'Edit Site' : 'Add Site' ) . '</h3><form class="servsys-dependent-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'servsys_save_site' );
-		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . (int) $site['id'] . '">';
+		echo '<input type="hidden" name="action" value="servsys_save_site"><input type="hidden" name="customer_id" value="' . esc_attr( (string) $customer_id ) . '"><input type="hidden" name="site_id" value="' . esc_attr( (string) (int) $site['id'] ) . '">';
 		foreach ( array( 'name' => 'Site Name', 'address1' => 'Address', 'address2' => 'Address 2', 'city' => 'City', 'state' => 'State', 'postal_code' => 'Postal Code', 'phone' => 'Phone' ) as $name => $label ) {
 			$this->input( $name, $label, $site[ $name ], in_array( $name, array( 'address1', 'city', 'state', 'postal_code' ), true ) );
 		}
@@ -292,7 +292,7 @@ final class CustomersPage {
 		$this->input( 'subject', 'Subject', '' );
 		echo '<p><label>Site<br><select name="site_id"><option value="">Customer-wide</option>';
 		foreach ( $sites as $site ) {
-			echo '<option value="' . (int) $site['id'] . '">' . esc_html( $site['name'] ?: $site['address1'] ) . '</option>';
+			echo '<option value="' . esc_attr( (string) (int) $site['id'] ) . '">' . esc_html( $site['name'] ?: $site['address1'] ) . '</option>';
 		}
 		echo '</select></label></p><p><label>Note<br><textarea class="large-text" rows="4" name="note" required></textarea></label></p>';
 		submit_button( 'Add Note', 'secondary' );
@@ -314,9 +314,9 @@ final class CustomersPage {
 			$form_id = 'servsys-customer-type-' . (int) $type['id'];
 			echo '<tr><td><form id="' . esc_attr( $form_id ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			wp_nonce_field( 'servsys_save_customer_type' );
-			echo '<input type="hidden" name="action" value="servsys_save_customer_type"><input type="hidden" name="type_id" value="' . (int) $type['id'] . '">';
+			echo '<input type="hidden" name="action" value="servsys_save_customer_type"><input type="hidden" name="type_id" value="' . esc_attr( (string) (int) $type['id'] ) . '">';
 			echo '<input type="text" name="name" value="' . esc_attr( $type['name'] ) . '" required></form></td>';
-			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . (int) $type['sort_order'] . '" class="small-text"></td>';
+			echo '<td><input form="' . esc_attr( $form_id ) . '" type="number" name="sort_order" value="' . esc_attr( (string) (int) $type['sort_order'] ) . '" class="small-text"></td>';
 			echo '<td><label><input form="' . esc_attr( $form_id ) . '" type="checkbox" name="active" value="1" ' . checked( (int) $type['active'], 1, false ) . '> Active</label></td>';
 			echo '<td><button form="' . esc_attr( $form_id ) . '" class="button" type="submit">Save</button></td></tr>';
 		}
