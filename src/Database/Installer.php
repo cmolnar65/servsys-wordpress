@@ -33,6 +33,8 @@ final class Installer {
 			dbDelta( $sql );
 		}
 
+		self::seed_installation_company( $wpdb );
+		self::backfill_company_ownership( $wpdb );
 		self::seed_customer_types( $wpdb );
 		self::seed_equipment_types( $wpdb );
 		self::preserve_equipment_types( $wpdb );
@@ -42,6 +44,35 @@ final class Installer {
 		self::migrate_customer_types( $wpdb );
 
 		update_option( 'servsys_db_version', SERVSYS_DB_VERSION, false );
+	}
+
+	private static function seed_installation_company( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned migration of plugin-owned tables.
+		$table = $wpdb->prefix . 'servsys_companies';
+		if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE id = %d', $table, 1 ) ) ) {
+			$now = current_time( 'mysql', true );
+			$wpdb->insert( $table, array(
+				'id' => 1,
+				'name' => 'Installation Company',
+				'use_preprinted_letterhead' => 0,
+				'fiscal_year_end_month' => 12,
+				'fiscal_year_end_day' => 31,
+				'customer_portal_enabled' => 0,
+				'active' => 1,
+				'created_at' => $now,
+				'updated_at' => $now,
+			) );
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function backfill_company_ownership( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Required upgrade-safe tenant ownership migration.
+		foreach ( array( 'customers', 'sites', 'customer_notes', 'equipment', 'service_calls', 'service_call_equipment', 'service_call_notes' ) as $suffix ) {
+			$table = $wpdb->prefix . 'servsys_' . $suffix;
+			$wpdb->query( $wpdb->prepare( 'UPDATE %i SET company_id = 1 WHERE company_id IS NULL OR company_id = 0', $table ) );
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	private static function seed_customer_types( $wpdb ): void {
