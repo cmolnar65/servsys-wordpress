@@ -2,7 +2,7 @@
     "name": "cmolnar65/servsys-wordpress",
     "description": "WordPress-based replacement for the ServSys field service management system",
     "type": "wordpress-plugin",
-    "license": "proprietary",
+    "license": "GPL-2.0-or-later",
     "require": {
         "php": ">=7.4"
     },
