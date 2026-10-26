@@ -1,0 +1,234 @@
+<?php
+
+namespace ServSys\Database;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+use ServSys\Customers\CustomerTypeRepository;
+use ServSys\Equipment\EquipmentTypeRepository;
+
+final class Installer {
+	public static function activate(): void {
+		self::install_schema();
+		\ServSys\Users\Capabilities::install();
+	}
+
+	public static function maybe_upgrade(): void {
+		$installed = (int) get_option( 'servsys_db_version', 0 );
+
+		if ( $installed < SERVSYS_DB_VERSION ) {
+			self::install_schema();
+			\ServSys\Users\Capabilities::install();
+		}
+	}
+
+	private static function install_schema(): void {
+		global $wpdb;
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		foreach ( Schema::tables( $wpdb ) as $sql ) {
+			dbDelta( $sql );
+		}
+
+		self::seed_installation_company( $wpdb );
+		self::backfill_company_ownership( $wpdb );
+		self::seed_wordpress_administrators( $wpdb );
+		self::seed_customer_types( $wpdb );
+		self::seed_equipment_types( $wpdb );
+		self::preserve_equipment_types( $wpdb );
+		self::merge_duplicate_equipment_types( $wpdb );
+		self::migrate_equipment_types( $wpdb );
+		self::preserve_legacy_customer_types( $wpdb );
+		self::migrate_customer_types( $wpdb );
+
+		update_option( 'servsys_db_version', SERVSYS_DB_VERSION, false );
+	}
+
+	private static function seed_installation_company( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned migration of plugin-owned tables.
+		$table = $wpdb->prefix . 'servsys_companies';
+		if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE id = %d', $table, 1 ) ) ) {
+			$now = current_time( 'mysql', true );
+			$wpdb->insert( $table, array(
+				'id' => 1,
+				'name' => 'Installation Company',
+				'use_preprinted_letterhead' => 0,
+				'fiscal_year_end_month' => 12,
+				'fiscal_year_end_day' => 31,
+				'customer_portal_enabled' => 0,
+				'active' => 1,
+				'created_at' => $now,
+				'updated_at' => $now,
+			) );
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function backfill_company_ownership( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Required upgrade-safe tenant ownership migration.
+		foreach ( array( 'customers', 'sites', 'customer_notes', 'equipment', 'service_calls', 'service_call_equipment', 'service_call_notes' ) as $suffix ) {
+			$table = $wpdb->prefix . 'servsys_' . $suffix;
+			$wpdb->query( $wpdb->prepare( 'UPDATE %i SET company_id = 1 WHERE company_id IS NULL OR company_id = 0', $table ) );
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function seed_wordpress_administrators( $wpdb ): void {
+		$table = $wpdb->prefix . 'servsys_company_users';
+		$now = current_time( 'mysql', true );
+		foreach ( get_users( array( 'role' => 'administrator', 'fields' => 'ID' ) ) as $user_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Upgrade-safe seed of plugin-owned authorization data.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE company_id = %d AND user_id = %d', $table, 1, $user_id ) );
+			if ( ! $exists ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Upgrade-safe seed write to plugin-owned authorization table.
+				$wpdb->insert( $table, array( 'company_id'=>1, 'user_id'=>$user_id, 'is_company_admin'=>1, 'active'=>1, 'permissions'=>'[]', 'created_at'=>$now, 'updated_at'=>$now, 'created_by'=>$user_id, 'updated_by'=>$user_id ) );
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			}
+		}
+	}
+
+	private static function seed_customer_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$table = $wpdb->prefix . 'servsys_customer_types';
+		$now   = current_time( 'mysql', true );
+
+		foreach ( array( 'Residential', 'Commercial', 'Agricultural' ) as $order => $name ) {
+			$slug = sanitize_title( $name );
+			$id   = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $table, $slug ) );
+			if ( ! $id ) {
+				$wpdb->insert(
+					$table,
+					array(
+						'name'       => $name,
+						'slug'       => $slug,
+						'sort_order' => ( $order + 1 ) * 10,
+						'active'     => 1,
+						'created_at' => $now,
+						'updated_at' => $now,
+					)
+				);
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function seed_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$table = $wpdb->prefix . 'servsys_equipment_types';
+		$now = current_time( 'mysql', true );
+		$names = array( 'Air Conditioner', 'Air Handler', 'Boiler', 'Furnace', 'Heat Pump', 'Mini-Split', 'Package Unit', 'Water Heater', 'Other' );
+		foreach ( $names as $order => $name ) {
+			$slug = sanitize_title( $name );
+			if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $table, $slug ) ) ) {
+				$wpdb->insert( $table, array( 'name' => $name, 'slug' => $slug, 'sort_order' => ( $order + 1 ) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function preserve_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$equipment = $wpdb->prefix . 'servsys_equipment';
+		$types = $wpdb->prefix . 'servsys_equipment_types';
+		$now = current_time( 'mysql', true );
+		$names = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT TRIM(equipment_type) FROM %i WHERE equipment_type IS NOT NULL AND TRIM(equipment_type) <> ''", $equipment ) );
+		foreach ( $names as $name ) {
+			if ( ! $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE LOWER(name) = LOWER(%s)', $types, $name ) ) ) {
+				$slug = sanitize_title( $name );
+				if ( $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $types, $slug ) ) ) {
+					$slug .= '-' . substr( md5( $name ), 0, 8 );
+				}
+				$wpdb->insert( $types, array( 'name' => $name, 'slug' => $slug, 'sort_order' => 100, 'active' => 1, 'created_at' => $now, 'updated_at' => $now ) );
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function merge_duplicate_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$equipment = $wpdb->prefix . 'servsys_equipment';
+		$types = $wpdb->prefix . 'servsys_equipment_types';
+		$groups = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT LOWER(TRIM(name)) AS normalized_name, GROUP_CONCAT(id ORDER BY active DESC, id ASC) AS ids, COUNT(*) AS type_count FROM %i GROUP BY LOWER(TRIM(name)) HAVING type_count > 1',
+				$types
+			),
+			ARRAY_A
+		);
+
+		foreach ( $groups as $group ) {
+			$ids = array_values( array_filter( array_map( 'absint', explode( ',', $group['ids'] ) ) ) );
+			if ( count( $ids ) < 2 ) {
+				continue;
+			}
+			$keep_id = array_shift( $ids );
+			foreach ( $ids as $duplicate_id ) {
+				$wpdb->update( $equipment, array( 'equipment_type_id' => $keep_id ), array( 'equipment_type_id' => $duplicate_id ) );
+				$wpdb->delete( $types, array( 'id' => $duplicate_id ) );
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function migrate_equipment_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$equipment = $wpdb->prefix . 'servsys_equipment';
+		$types = $wpdb->prefix . 'servsys_equipment_types';
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE %i e INNER JOIN %i t ON LOWER(TRIM(e.equipment_type)) = LOWER(TRIM(t.name)) SET e.equipment_type_id = t.id WHERE e.equipment_type_id IS NULL AND e.equipment_type IS NOT NULL AND e.equipment_type <> ''",
+				$equipment,
+				$types
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function preserve_legacy_customer_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$customers = $wpdb->prefix . 'servsys_customers';
+		$types     = $wpdb->prefix . 'servsys_customer_types';
+		$now       = current_time( 'mysql', true );
+		$names     = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT TRIM(customer_type) FROM %i WHERE customer_type IS NOT NULL AND TRIM(customer_type) <> ''", $customers ) );
+
+		foreach ( $names as $name ) {
+			$existing = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE LOWER(name) = LOWER(%s)', $types, $name ) );
+			if ( ! $existing ) {
+				$slug = sanitize_title( $name );
+				if ( $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE slug = %s', $types, $slug ) ) ) {
+					$slug .= '-' . substr( md5( $name ), 0, 8 );
+				}
+				$wpdb->insert(
+					$types,
+					array(
+						'name'       => $name,
+						'slug'       => $slug,
+						'sort_order' => 100,
+						'active'     => 1,
+						'created_at' => $now,
+						'updated_at' => $now,
+					)
+				);
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	private static function migrate_customer_types( $wpdb ): void {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Versioned ServSys install/migration operates on plugin-owned custom tables; migration reads/writes must not use stale cache data.
+		$customers = $wpdb->prefix . 'servsys_customers';
+		$types     = $wpdb->prefix . 'servsys_customer_types';
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE %i c INNER JOIN %i t ON LOWER(TRIM(c.customer_type)) = LOWER(TRIM(t.name)) SET c.customer_type_id = t.id WHERE c.customer_type_id IS NULL AND c.customer_type IS NOT NULL AND c.customer_type <> ''",
+				$customers,
+				$types
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+}
