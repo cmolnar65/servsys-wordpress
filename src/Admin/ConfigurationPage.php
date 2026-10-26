@@ -49,6 +49,7 @@ final class ConfigurationPage {
 		if ( current_user_can( Capabilities::VIEW_INVENTORY ) ) {
 			$this->link( 'Inventory Items', 'Manage company inventory catalog, identification, costs, and calculated selling prices.', 'servsys-inventory-items' );
 			$this->link( 'Inventory Locations', 'Manage company warehouses, shops, trucks, and technician inventory locations.', 'servsys-inventory-locations' );
+			$this->link( 'Inventory History & Reporting', 'Review current stock, filtered transaction history, and quantity movement.', 'servsys-inventory-reports' );
 		}
 
 		if ( current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
