@@ -28,4 +28,12 @@ final class Authorization {
 		$permissions=json_decode((string)$m['permissions'],true);
 		return is_array($permissions) && in_array($capability,$permissions,true);
 	}
+	public static function filter_user_caps( array $allcaps, array $caps, array $args, $user ): array {
+		foreach ( Capabilities::company_capabilities() as $capability ) {
+			if ( self::is_wordpress_admin( (int) $user->ID ) ) { $allcaps[$capability]=true; continue; }
+			$allcaps[$capability]=self::can($capability,0,(int)$user->ID);
+		}
+		if ( ! self::is_wordpress_admin( (int) $user->ID ) ) { $allcaps[Capabilities::MANAGE_COMPANIES]=false; }
+		return $allcaps;
+	}
 }
