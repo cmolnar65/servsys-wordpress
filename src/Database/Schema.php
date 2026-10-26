@@ -316,7 +316,7 @@ final class Schema {
 				created_by bigint(20) unsigned NULL,
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
-				UNIQUE KEY legacy_contnum (legacy_contnum),
+				UNIQUE KEY company_legacy_contnum (company_id,legacy_contnum),
 				KEY company_id (company_id),
 				KEY customer_id (customer_id),
 				KEY site_id (site_id),
