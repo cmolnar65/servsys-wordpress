@@ -45,9 +45,10 @@ final class Phase8ServiceCallInventoryTest extends TestCase {
 
 	public function test_service_call_workspace_uses_inventory_permission_and_preserves_free_text_notes(): void {
 		$page=file_get_contents(__DIR__ . '/../../src/Admin/ServiceCallsPage.php');
-		$this->assertStringContainsString('Capabilities::USE_INVENTORY',$page);
-		$this->assertStringContainsString('Add Inventory Used',$page);
-		$this->assertStringContainsString('Return / Reverse',$page);
+		$inventory_page=file_get_contents(__DIR__ . '/../../src/Admin/ServiceCallInventoryPage.php');
+		$this->assertStringContainsString('Capabilities::USE_INVENTORY',$inventory_page);
+		$this->assertStringContainsString('Add Inventory Used',$inventory_page);
+		$this->assertStringContainsString('Return / Reverse',$inventory_page);
 		$this->assertStringContainsString('Additional Parts / Materials Notes',$page);
 		$this->assertStringContainsString("\$call['parts_notes']",$page);
 	}
