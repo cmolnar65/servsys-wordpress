@@ -334,6 +334,27 @@ final class Schema {
 				KEY company_id (company_id),
 				KEY equipment_id (equipment_id)
 			) {$charset};",
+			"{$wpdb->prefix}servsys_pm_scheduled_visits" => "CREATE TABLE {$wpdb->prefix}servsys_pm_scheduled_visits (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL,
+				pm_agreement_id bigint(20) unsigned NOT NULL,
+				scheduled_year smallint(5) unsigned NOT NULL,
+				scheduled_month tinyint(3) unsigned NOT NULL,
+				scheduled_date date NULL,
+				service_call_id bigint(20) unsigned NULL,
+				status varchar(20) NOT NULL DEFAULT 'scheduled',
+				notes longtext NULL,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				KEY company_id (company_id),
+				KEY pm_agreement_id (pm_agreement_id),
+				KEY service_call_id (service_call_id),
+				KEY scheduled_period (scheduled_year,scheduled_month),
+				KEY company_status (company_id,status)
+			) {$charset};",
 			"{$wpdb->prefix}servsys_inventory_locations" => "CREATE TABLE {$wpdb->prefix}servsys_inventory_locations (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				company_id bigint(20) unsigned NOT NULL,
