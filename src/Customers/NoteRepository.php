@@ -17,6 +17,7 @@ final class NoteRepository {
 
 	public function for_customer( int $customer_id ): array {
 		$wpdb = $this->wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses a plugin-owned custom table and must remain current.
 		return $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT * FROM %i WHERE customer_id = %d ORDER BY note_date DESC, id DESC',
