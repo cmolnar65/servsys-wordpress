@@ -11,6 +11,30 @@ final class Schema {
 		$charset = $wpdb->get_charset_collate();
 
 		return array(
+			"{$wpdb->prefix}servsys_companies" => "CREATE TABLE {$wpdb->prefix}servsys_companies (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				name varchar(255) NOT NULL,
+				logo_attachment_id bigint(20) unsigned NULL,
+				tagline text NULL,
+				address1 varchar(255) NULL,
+				address2 varchar(255) NULL,
+				city varchar(100) NULL,
+				state varchar(50) NULL,
+				postal_code varchar(20) NULL,
+				phone varchar(50) NULL,
+				use_preprinted_letterhead tinyint(1) NOT NULL DEFAULT 0,
+				fiscal_year_end_month tinyint(3) unsigned NOT NULL DEFAULT 12,
+				fiscal_year_end_day tinyint(3) unsigned NOT NULL DEFAULT 31,
+				customer_portal_enabled tinyint(1) NOT NULL DEFAULT 0,
+				active tinyint(1) NOT NULL DEFAULT 1,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				KEY name (name),
+				KEY active (active)
+			) {$charset};",
 			"{$wpdb->prefix}servsys_equipment_types" => "CREATE TABLE {$wpdb->prefix}servsys_equipment_types (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				name varchar(100) NOT NULL,
@@ -37,6 +61,7 @@ final class Schema {
 			) {$charset};",
 			"{$wpdb->prefix}servsys_customers" => "CREATE TABLE {$wpdb->prefix}servsys_customers (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				legacy_custnum bigint(20) unsigned NULL,
 				name varchar(255) NOT NULL,
 				customer_type varchar(50) NULL,
@@ -52,6 +77,7 @@ final class Schema {
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY legacy_custnum (legacy_custnum),
+				KEY company_id (company_id),
 				KEY name (name),
 				KEY customer_type_id (customer_type_id),
 				KEY email (email),
@@ -60,6 +86,7 @@ final class Schema {
 			) {$charset};",
 			"{$wpdb->prefix}servsys_sites" => "CREATE TABLE {$wpdb->prefix}servsys_sites (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				customer_id bigint(20) unsigned NOT NULL,
 				legacy_custsite varchar(100) NULL,
 				legacy_sitenum bigint(20) unsigned NULL,
@@ -77,6 +104,7 @@ final class Schema {
 				created_by bigint(20) unsigned NULL,
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
+				KEY company_id (company_id),
 				KEY customer_id (customer_id),
 				KEY legacy_site (legacy_custsite,legacy_sitenum),
 				KEY city (city),
@@ -85,6 +113,7 @@ final class Schema {
 			) {$charset};",
 			"{$wpdb->prefix}servsys_customer_notes" => "CREATE TABLE {$wpdb->prefix}servsys_customer_notes (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				customer_id bigint(20) unsigned NOT NULL,
 				site_id bigint(20) unsigned NULL,
 				legacy_notenum bigint(20) unsigned NULL,
@@ -97,12 +126,14 @@ final class Schema {
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY legacy_notenum (legacy_notenum),
+				KEY company_id (company_id),
 				KEY customer_id (customer_id),
 				KEY site_id (site_id),
 				KEY note_date (note_date)
 			) {$charset};",
 			"{$wpdb->prefix}servsys_equipment" => "CREATE TABLE {$wpdb->prefix}servsys_equipment (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				customer_id bigint(20) unsigned NOT NULL,
 				site_id bigint(20) unsigned NOT NULL,
 				legacy_enum bigint(20) unsigned NULL,
@@ -125,6 +156,7 @@ final class Schema {
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY legacy_enum (legacy_enum),
+				KEY company_id (company_id),
 				KEY customer_id (customer_id),
 				KEY site_id (site_id),
 				KEY equipment_type (equipment_type),
@@ -134,6 +166,7 @@ final class Schema {
 			) {$charset};",
 			"{$wpdb->prefix}servsys_service_calls" => "CREATE TABLE {$wpdb->prefix}servsys_service_calls (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				customer_id bigint(20) unsigned NOT NULL,
 				site_id bigint(20) unsigned NOT NULL,
 				legacy_crecnum bigint(20) unsigned NULL,
@@ -155,6 +188,7 @@ final class Schema {
 				PRIMARY KEY  (id),
 				UNIQUE KEY legacy_crecnum (legacy_crecnum),
 				UNIQUE KEY call_number (call_number),
+				KEY company_id (company_id),
 				KEY customer_id (customer_id),
 				KEY site_id (site_id),
 				KEY service_date (service_date),
@@ -164,17 +198,20 @@ final class Schema {
 			) {$charset};",
 			"{$wpdb->prefix}servsys_service_call_equipment" => "CREATE TABLE {$wpdb->prefix}servsys_service_call_equipment (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				service_call_id bigint(20) unsigned NOT NULL,
 				equipment_id bigint(20) unsigned NOT NULL,
 				created_at datetime NOT NULL,
 				created_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY service_call_equipment (service_call_id,equipment_id),
+				KEY company_id (company_id),
 				KEY service_call_id (service_call_id),
 				KEY equipment_id (equipment_id)
 			) {$charset};",
 			"{$wpdb->prefix}servsys_service_call_notes" => "CREATE TABLE {$wpdb->prefix}servsys_service_call_notes (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL DEFAULT 1,
 				service_call_id bigint(20) unsigned NOT NULL,
 				legacy_recnum bigint(20) unsigned NULL,
 				note longtext NOT NULL,
@@ -185,6 +222,7 @@ final class Schema {
 				updated_by bigint(20) unsigned NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY legacy_recnum (legacy_recnum),
+				KEY company_id (company_id),
 				KEY service_call_id (service_call_id),
 				KEY note_date (note_date)
 			) {$charset};",
