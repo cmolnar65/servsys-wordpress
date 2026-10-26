@@ -30,7 +30,7 @@ final class CustomersPage {
 	public function register_menu(): void {
 		add_menu_page( 'ServSys', 'ServSys', Capabilities::ACCESS, 'servsys', array( $this, 'render' ), 'dashicons-admin-tools', 26 );
 		add_submenu_page( 'servsys', 'Customers', 'Customers', Capabilities::VIEW_CUSTOMERS, 'servsys', array( $this, 'render' ) );
-		add_submenu_page( 'servsys', 'Customer Types', 'Customer Types', Capabilities::EDIT_CUSTOMERS, 'servsys-customer-types', array( $this, 'render_customer_types' ) );
+		add_submenu_page( null, 'Customer Types', 'Customer Types', Capabilities::EDIT_CUSTOMERS, 'servsys-customer-types', array( $this, 'render_customer_types' ) );
 	}
 
 	public function enqueue_assets( string $hook ): void {
