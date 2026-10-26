@@ -16,12 +16,12 @@ final class InventoryItemRepository {
 	}
 
 	public function find( int $id ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current plugin-owned inventory data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Current plugin-owned inventory data.
 		return $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE id = %d AND company_id = %d', $this->table, $id, CompanyContext::current_company_id() ), ARRAY_A );
 	}
 
 	public function find_by_sku( string $sku ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current plugin-owned inventory data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Current plugin-owned inventory data.
 		return $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT * FROM %i WHERE sku = %s AND company_id = %d', $this->table, $sku, CompanyContext::current_company_id() ), ARRAY_A );
 	}
 
@@ -37,7 +37,7 @@ final class InventoryItemRepository {
 				? $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND (sku LIKE %s OR description LIKE %s OR manufacturer LIKE %s OR manufacturer_part_number LIKE %s OR category LIKE %s) ORDER BY description,sku,id', $this->table, $company_id, $like, $like, $like, $like, $like )
 				: $this->wpdb->prepare( 'SELECT * FROM %i WHERE company_id = %d AND active = 1 AND (sku LIKE %s OR description LIKE %s OR manufacturer LIKE %s OR manufacturer_part_number LIKE %s OR category LIKE %s) ORDER BY description,sku,id', $this->table, $company_id, $like, $like, $like, $like, $like );
 		}
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current plugin-owned inventory data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Current plugin-owned inventory data.
 		return $this->wpdb->get_results( $sql, ARRAY_A );
 	}
 
