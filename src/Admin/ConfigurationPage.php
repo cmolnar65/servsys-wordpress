@@ -56,6 +56,10 @@ final class ConfigurationPage {
 			$this->link( 'Flat Rate Pricing', 'Manage company Flat Rate configuration, categories, price-book items, and material recipes.', 'servsys-flat-rate' );
 		}
 
+		if ( current_user_can( Capabilities::VIEW_PM_PLANS ) ) {
+			$this->link( 'Preventive Maintenance Plans', 'Manage company PM plan templates and term pricing.', 'servsys-pm-plans' );
+		}
+
 		if ( current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
 			$this->link( 'Equipment Types', 'Manage the equipment type lookup values used by ServSys.', 'servsys-equipment-types' );
 		}
