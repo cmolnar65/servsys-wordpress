@@ -50,7 +50,7 @@ final class InventoryService {
 	public function adjust_stock( int $item_id, int $location_id, float $quantity_change, string $transaction_type, string $note = '', int $service_call_id = 0, int $related_transaction_id = 0 ): int {
 		$quantity_change = round( $quantity_change, 4 );
 		if ( 0.0 === $quantity_change ) { throw new \InvalidArgumentException( 'Inventory quantity change cannot be zero.' ); }
-		$allowed=array('initial','receipt','adjustment','transfer_in','transfer_out','service_call_usage','service_call_return');
+		$allowed=array('initial','receipt','adjustment');
 		if ( ! in_array($transaction_type,$allowed,true) ) { throw new \InvalidArgumentException( 'Invalid inventory transaction type.' ); }
 		$item=$this->require_item($item_id);
 		$location=$this->require_location($location_id);
@@ -126,6 +126,7 @@ final class InventoryService {
 				'note'=>sanitize_textarea_field($note),'transaction_at'=>$now,'created_at'=>$now,'created_by'=>$user ?: null,
 			));
 			if ( ! $in ) { throw new \RuntimeException( 'Unable to record destination inventory transfer.' ); }
+			if ( ! $this->transactions->set_related_transaction( $out, $in ) ) { throw new \RuntimeException( 'Unable to link inventory transfer transactions.' ); }
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Both transfer balances and ledger entries must commit atomically.
 			$wpdb->query( 'COMMIT' );
 			return array('transfer_out_transaction_id'=>$out,'transfer_in_transaction_id'=>$in);
