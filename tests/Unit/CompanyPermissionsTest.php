@@ -6,7 +6,7 @@ final class CompanyPermissionsTest extends TestCase {
 		$this->assertStringContainsString('servsys_company_users',$schema);
 		$this->assertStringContainsString('UNIQUE KEY company_user (company_id,user_id)',$schema);
 		$this->assertStringContainsString('is_company_admin',$schema);
-		$this->assertStringContainsString("SERVSYS_DB_VERSION', 9",$bootstrap);
+		$this->assertStringContainsString("SERVSYS_DB_VERSION', 10",$bootstrap);
 	}
 	public function test_wordpress_admin_is_explicit_system_authority(): void {
 		$auth=file_get_contents(__DIR__.'/../../src/Users/Authorization.php'); $companies=file_get_contents(__DIR__.'/../../src/Admin/CompaniesPage.php');
