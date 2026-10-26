@@ -26,6 +26,39 @@ final class ServiceCallRepository {
 		);
 	}
 
+	public function search( string $term = '', string $status = '' ): array {
+		$wpdb      = $this->wpdb;
+		$customers = $wpdb->prefix . 'servsys_customers';
+		$sites     = $wpdb->prefix . 'servsys_sites';
+		$where     = array( '1=1' );
+		$args      = array( $this->table, $customers, $sites );
+
+		if ( '' !== $term ) {
+			$like    = '%' . $wpdb->esc_like( $term ) . '%';
+			$where[] = '(sc.call_number LIKE %s OR c.name LIKE %s OR s.name LIKE %s OR s.address1 LIKE %s OR sc.reason LIKE %s)';
+			array_push( $args, $like, $like, $like, $like, $like );
+		}
+		if ( in_array( $status, array( 'open', 'completed', 'cancelled' ), true ) ) {
+			$where[] = 'sc.status = %s';
+			$args[]  = $status;
+		}
+
+		$sql = 'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address FROM %i sc INNER JOIN %i c ON c.id = sc.customer_id INNER JOIN %i s ON s.id = sc.site_id WHERE ' . implode( ' AND ', $where ) . ' ORDER BY sc.service_date DESC, sc.id DESC LIMIT 250';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
+		return $wpdb->get_results( $wpdb->prepare( $sql, ...$args ), ARRAY_A );
+	}
+
+	public function find_with_context( int $id ) {
+		$wpdb      = $this->wpdb;
+		$customers = $wpdb->prefix . 'servsys_customers';
+		$sites     = $wpdb->prefix . 'servsys_sites';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
+		return $wpdb->get_row(
+			$wpdb->prepare( 'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address, s.city AS site_city, s.state AS site_state FROM %i sc INNER JOIN %i c ON c.id = sc.customer_id INNER JOIN %i s ON s.id = sc.site_id WHERE sc.id = %d', $this->table, $customers, $sites, $id ),
+			ARRAY_A
+		);
+	}
+
 	public function create( array $data ): int {
 		$this->wpdb->insert( $this->table, $data );
 		return (int) $this->wpdb->insert_id;
