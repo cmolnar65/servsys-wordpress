@@ -29,32 +29,15 @@ final class ServiceCallRepository {
 	}
 
 	public function search( string $term = '', string $status = '', string $follow_up = '' ): array {
-		$wpdb      = $this->wpdb;
-		$customers = $wpdb->prefix . 'servsys_customers';
-		$sites     = $wpdb->prefix . 'servsys_sites';
-		$where     = array( 'sc.company_id = %d' );
-		$args      = array( $this->table, $customers, $sites, CompanyContext::current_company_id() );
-
-		if ( '' !== $term ) {
-			$like    = '%' . $wpdb->esc_like( $term ) . '%';
-			$where[] = '(sc.call_number LIKE %s OR c.name LIKE %s OR s.name LIKE %s OR s.address1 LIKE %s OR sc.reason LIKE %s)';
-			array_push( $args, $like, $like, $like, $like, $like );
-		}
-		if ( in_array( $status, array( 'open', 'completed', 'cancelled' ), true ) ) {
-			$where[] = 'sc.status = %s';
-			$args[]  = $status;
-		}
-		if ( 'required' === $follow_up ) {
-			$where[] = 'sc.follow_up_required = 1';
-		} elseif ( 'none' === $follow_up ) {
-			$where[] = 'sc.follow_up_required = 0';
-		}
-
-		$sql = 'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address FROM %i sc INNER JOIN %i c ON c.id = sc.customer_id INNER JOIN %i s ON s.id = sc.site_id WHERE ' . implode( ' AND ', $where ) . ' ORDER BY sc.service_date DESC, sc.id DESC LIMIT 250';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys operational data uses plugin-owned custom tables and must remain current.
-		return $wpdb->get_results( $wpdb->prepare( $sql, ...$args ), ARRAY_A );
+		$wpdb=$this->wpdb; $customers=$wpdb->prefix.'servsys_customers'; $sites=$wpdb->prefix.'servsys_sites'; $company_id=CompanyContext::current_company_id();
+		$like='%' . $wpdb->esc_like($term) . '%'; $status_value=in_array($status,array('open','completed','cancelled'),true)?$status:'';
+		$follow_value='required'===$follow_up?1:('none'===$follow_up?0:-1);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Current operational service-call list.
+		return $wpdb->get_results($wpdb->prepare(
+			'SELECT sc.*, c.name AS customer_name, s.name AS site_name, s.address1 AS site_address FROM %i sc INNER JOIN %i c ON c.id=sc.customer_id INNER JOIN %i s ON s.id=sc.site_id WHERE sc.company_id=%d AND (%s = \'\' OR sc.call_number LIKE %s OR c.name LIKE %s OR s.name LIKE %s OR s.address1 LIKE %s OR sc.reason LIKE %s) AND (%s = \'\' OR sc.status=%s) AND (%d = -1 OR sc.follow_up_required=%d) ORDER BY sc.service_date DESC, sc.id DESC LIMIT 250',
+			$this->table,$customers,$sites,$company_id,$term,$like,$like,$like,$like,$like,$status_value,$status_value,$follow_value,$follow_value
+		),ARRAY_A);
 	}
-
 
 	public function for_site( int $customer_id, int $site_id, int $limit = 10 ): array {
 		$wpdb = $this->wpdb;
@@ -108,7 +91,7 @@ final class ServiceCallRepository {
 
 	public function replace_equipment( int $service_call_id, array $equipment_ids ): bool {
 		$wpdb = $this->wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- ServSys owns this relationship table and replacement is an intentional atomic domain operation.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys owns this relationship table; replacement must use current relationship state.
 		if ( false === $wpdb->delete( $this->equipment_table, array( 'service_call_id' => $service_call_id ) ) ) {
 			return false;
 		}
@@ -116,6 +99,7 @@ final class ServiceCallRepository {
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		foreach ( $equipment_ids as $equipment_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ServSys owns this relationship table; write is part of replacement operation.
 			if ( false === $wpdb->insert(
 				$this->equipment_table,
 				array(
