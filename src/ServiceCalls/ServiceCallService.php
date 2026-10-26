@@ -29,9 +29,9 @@ final class ServiceCallService {
 	}
 
 	public function save( int $customer_id, int $site_id, array $input, int $id = 0 ): int {
-		$this->validate_customer_site( $customer_id, $site_id );
+		$company_id = $this->validate_customer_site( $customer_id, $site_id );
 
-		$equipment_ids = $this->validate_equipment( $customer_id, $site_id, isset( $input['equipment_ids'] ) ? (array) $input['equipment_ids'] : array() );
+		$equipment_ids = $this->validate_equipment( $customer_id, $site_id, isset( $input['equipment_ids'] ) ? (array) $input['equipment_ids'] : array(), $company_id );
 		$service_date  = isset( $input['service_date'] ) ? sanitize_text_field( $input['service_date'] ) : '';
 		if ( ! $this->valid_date( $service_date ) ) {
 			throw new \InvalidArgumentException( 'A valid service date is required.' );
@@ -45,6 +45,7 @@ final class ServiceCallService {
 		$now  = current_time( 'mysql', true );
 		$user = get_current_user_id();
 		$data = array(
+			'company_id' => $company_id,
 			'customer_id'          => $customer_id,
 			'site_id'              => $site_id,
 			'service_date'         => $service_date,
@@ -97,25 +98,26 @@ final class ServiceCallService {
 		return $year . '-' . $id;
 	}
 
-	private function validate_customer_site( int $customer_id, int $site_id ): void {
+	private function validate_customer_site( int $customer_id, int $site_id ): int {
 		if ( $customer_id < 1 || $site_id < 1 ) {
 			throw new \InvalidArgumentException( 'Customer and site are required.' );
 		}
 		$customer = $this->customer_repository->find( $customer_id );
 		$site     = $this->site_repository->find( $site_id );
-		if ( ! $customer || ! $site || (int) $site['customer_id'] !== $customer_id ) {
+		if ( ! $customer || ! $site || (int) $site['customer_id'] !== $customer_id || (int) $site['company_id'] !== (int) $customer['company_id'] ) {
 			throw new \InvalidArgumentException( 'Selected site does not belong to this customer.' );
 		}
+		return (int) $customer['company_id'];
 	}
 
-	private function validate_equipment( int $customer_id, int $site_id, array $equipment_ids ): array {
+	private function validate_equipment( int $customer_id, int $site_id, array $equipment_ids, int $company_id = 0 ): array {
 		$valid = array();
 		foreach ( array_unique( array_map( 'absint', $equipment_ids ) ) as $equipment_id ) {
 			if ( ! $equipment_id ) {
 				continue;
 			}
 			$equipment = $this->equipment_repository->find( $equipment_id );
-			if ( ! $equipment || (int) $equipment['customer_id'] !== $customer_id || (int) $equipment['site_id'] !== $site_id ) {
+			if ( ! $equipment || (int) $equipment['customer_id'] !== $customer_id || (int) $equipment['site_id'] !== $site_id || (int) $equipment['company_id'] !== $company_id ) {
 				throw new \InvalidArgumentException( 'Selected equipment does not belong to this customer site.' );
 			}
 			$valid[] = $equipment_id;
