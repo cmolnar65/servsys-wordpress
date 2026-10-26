@@ -18,6 +18,11 @@ final class NoteService {
 			throw new \InvalidArgumentException( 'Customer and note text are required.' );
 		}
 
+		$customer = ( new CustomerRepository() )->find( $customer_id );
+		if ( ! $customer ) {
+			throw new \InvalidArgumentException( 'Customer does not belong to the current company.' );
+		}
+
 		$site_id = ! empty( $input['site_id'] ) ? absint( $input['site_id'] ) : 0;
 		if ( $site_id ) {
 			$site = ( new \ServSys\Sites\SiteRepository() )->find( $site_id );
@@ -30,6 +35,7 @@ final class NoteService {
 		$user = get_current_user_id();
 		$id   = $this->repository->create(
 			array(
+				'company_id'  => (int) $customer['company_id'],
 				'customer_id' => $customer_id,
 				'site_id'     => $site_id ?: null,
 				'subject'     => isset( $input['subject'] ) ? sanitize_text_field( $input['subject'] ) : null,
