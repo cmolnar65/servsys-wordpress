@@ -260,6 +260,37 @@ final class Schema {
 				KEY inventory_item_id (inventory_item_id),
 				KEY item_sort (flat_rate_item_id,sort_order)
 			) {$charset};",
+			"{$wpdb->prefix}servsys_pm_plans" => "CREATE TABLE {$wpdb->prefix}servsys_pm_plans (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL,
+				description varchar(255) NOT NULL,
+				tm_estimate decimal(13,4) NOT NULL DEFAULT 0.0000,
+				active tinyint(1) NOT NULL DEFAULT 1,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				KEY company_id (company_id),
+				KEY company_active (company_id,active),
+				KEY description (description)
+			) {$charset};",
+			"{$wpdb->prefix}servsys_pm_plan_terms" => "CREATE TABLE {$wpdb->prefix}servsys_pm_plan_terms (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				company_id bigint(20) unsigned NOT NULL,
+				pm_plan_id bigint(20) unsigned NOT NULL,
+				term_months smallint(5) unsigned NOT NULL,
+				price decimal(13,4) NOT NULL DEFAULT 0.0000,
+				sort_order int(11) NOT NULL DEFAULT 0,
+				created_at datetime NOT NULL,
+				updated_at datetime NOT NULL,
+				created_by bigint(20) unsigned NULL,
+				updated_by bigint(20) unsigned NULL,
+				PRIMARY KEY  (id),
+				UNIQUE KEY plan_term (pm_plan_id,term_months),
+				KEY company_id (company_id),
+				KEY pm_plan_id (pm_plan_id)
+			) {$charset};",
 			"{$wpdb->prefix}servsys_inventory_locations" => "CREATE TABLE {$wpdb->prefix}servsys_inventory_locations (
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				company_id bigint(20) unsigned NOT NULL,
