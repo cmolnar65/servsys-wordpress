@@ -1,9 +1,6 @@
 name: WordPress Plugin Check
 
 on:
-  push:
-    branches:
-      - develop
   workflow_dispatch:
 
 jobs:
