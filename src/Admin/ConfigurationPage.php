@@ -46,6 +46,10 @@ final class ConfigurationPage {
 			$this->link( 'Customer Types', 'Manage the customer type lookup values used by ServSys.', 'servsys-customer-types' );
 		}
 
+		if ( current_user_can( Capabilities::VIEW_INVENTORY ) ) {
+			$this->link( 'Inventory Locations', 'Manage company warehouses, shops, trucks, and technician inventory locations.', 'servsys-inventory-locations' );
+		}
+
 		if ( current_user_can( Capabilities::EDIT_EQUIPMENT ) ) {
 			$this->link( 'Equipment Types', 'Manage the equipment type lookup values used by ServSys.', 'servsys-equipment-types' );
 		}
