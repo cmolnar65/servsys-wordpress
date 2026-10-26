@@ -11,6 +11,7 @@ use ServSys\Admin\ConfigurationPage;
 use ServSys\Admin\CompanyUsersPage;
 use ServSys\Admin\CustomersPage;
 use ServSys\Admin\EquipmentPage;
+use ServSys\Admin\InventoryLocationsPage;
 use ServSys\Admin\ServiceCallsPage;
 use ServSys\Database\Installer;
 use ServSys\REST\CustomersController;
@@ -38,6 +39,7 @@ final class Plugin {
 			( new CompaniesPage() )->register();
 			( new CompanyUsersPage() )->register();
 			( new EquipmentPage() )->register();
+			( new InventoryLocationsPage() )->register();
 			( new ServiceCallsPage() )->register();
 		}
 
