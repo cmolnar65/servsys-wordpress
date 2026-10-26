@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Capabilities {
 	const ACCESS = 'servsys_access';
+	const MANAGE_COMPANIES = 'servsys_manage_companies';
 	const VIEW_CUSTOMERS = 'servsys_view_customers';
 	const CREATE_CUSTOMERS = 'servsys_create_customers';
 	const EDIT_CUSTOMERS = 'servsys_edit_customers';
@@ -35,6 +36,7 @@ final class Capabilities {
 	public static function all(): array {
 		return array(
 			self::ACCESS,
+			self::MANAGE_COMPANIES,
 			self::VIEW_CUSTOMERS,
 			self::CREATE_CUSTOMERS,
 			self::EDIT_CUSTOMERS,
