@@ -21,6 +21,7 @@ use ServSys\Admin\PMAgreementsPage;
 use ServSys\Admin\ServiceCallsPage;
 use ServSys\Admin\ServiceCallInventoryPage;
 use ServSys\Admin\ServiceCallChargesPage;
+use ServSys\Admin\ServiceCallActivityPage;
 use ServSys\Database\Installer;
 use ServSys\REST\CustomersController;
 
@@ -57,6 +58,7 @@ final class Plugin {
 			( new ServiceCallsPage() )->register();
 			( new ServiceCallInventoryPage() )->register();
 			( new ServiceCallChargesPage() )->register();
+			( new ServiceCallActivityPage() )->register();
 		}
 
 		add_action(
