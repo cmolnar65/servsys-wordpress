@@ -140,6 +140,7 @@ final class ServiceCallsPage {
 		$this->section( 'Services Performed', $call['services_performed'] );
 		( new ServiceCallInventoryPage() )->render( $id );
 		( new ServiceCallChargesPage() )->render( $id );
+		( new ServiceCallTotalsPage() )->render( $id );
 		( new ServiceCallActivityPage() )->render( $id );
 		( new ServiceCallCompletionCodesPage() )->render( $id );
 		$this->section( 'Additional Parts / Materials Notes', $call['parts_notes'] );
