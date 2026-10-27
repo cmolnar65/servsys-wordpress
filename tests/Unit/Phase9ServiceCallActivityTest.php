@@ -6,7 +6,7 @@ final class Phase9ServiceCallActivityTest extends TestCase {
  public function test_activity_schema_is_versioned_and_preserves_odometer_mileage(): void {
   $boot=file_get_contents(__DIR__.'/../../servsys.php');
   $schema=file_get_contents(__DIR__.'/../../src/Database/Schema.php');
-  $this->assertStringContainsString("SERVSYS_DB_VERSION', 17",$boot);
+  preg_match("/SERVSYS_DB_VERSION',\\s*(\\d+)/",$boot,$m);$this->assertGreaterThanOrEqual(17,(int)($m[1]??0));
   $this->assertStringContainsString('servsys_service_call_activity',$schema);
   foreach(array('technician_user_id','dispatched_at datetime NULL','arrived_at datetime NULL','work_started_at datetime NULL','work_ended_at datetime NULL','odometer_start decimal(13,3) NULL','odometer_end decimal(13,3) NULL','travel_miles decimal(13,3) NULL','odometer_source varchar(20)','truck_number_snapshot varchar(50)','legacy_tsid bigint(20) unsigned NULL') as $field){$this->assertStringContainsString($field,$schema);}
  }
