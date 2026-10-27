@@ -73,11 +73,11 @@ final class ServiceCallRepository {
 	}
 
 	public function update( int $id, array $data ): bool {
-		return false !== $this->wpdb->update( $this->table, $data, array( 'id' => $id ) );
+		return false !== $this->wpdb->update( $this->table, $data, array( 'id' => $id, 'company_id' => CompanyContext::current_company_id() ) );
 	}
 
 	public function set_call_number( int $id, string $call_number ): bool {
-		return false !== $this->wpdb->update( $this->table, array( 'call_number' => $call_number ), array( 'id' => $id ) );
+		return false !== $this->wpdb->update( $this->table, array( 'call_number' => $call_number ), array( 'id' => $id, 'company_id' => CompanyContext::current_company_id() ) );
 	}
 
 	public function equipment_ids( int $service_call_id ): array {
