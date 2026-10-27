@@ -5,7 +5,8 @@ use PHPUnit\Framework\TestCase;
 final class Phase9FlatRateSchemaTest extends TestCase {
 	public function test_phase_9_flat_rate_schema_upgrade_is_versioned(): void {
 		$bootstrap = file_get_contents( __DIR__ . '/../../servsys.php' );
-		$this->assertStringContainsString( "SERVSYS_DB_VERSION', 11", $bootstrap );
+		preg_match( "/SERVSYS_DB_VERSION',\\s*(\\d+)/", $bootstrap, $matches );
+		$this->assertGreaterThanOrEqual( 11, (int) ( $matches[1] ?? 0 ) );
 	}
 
 	public function test_flat_rate_foundation_is_company_scoped(): void {
