@@ -15,7 +15,6 @@ use ServSys\ServiceCalls\ServiceCallCloseoutService;
 use ServSys\Sites\SiteRepository;
 use ServSys\ServiceCalls\ServiceCallRepository;
 use ServSys\Users\Capabilities;
-use ServSys\Users\Authorization;
 use ServSys\Users\CompanyUserRepository;
 
 final class ServiceCallsPage {
@@ -251,10 +250,10 @@ final class ServiceCallsPage {
 			foreach ( ( new CompanyUserRepository() )->for_company( $company_id ) as $membership ) {
 				if ( ! empty( $membership['active'] ) ) { $technician_ids[] = (int) $membership['user_id']; }
 			}
-			foreach ( get_users( array( 'role' => 'administrator', 'fields' => 'ID' ) ) as $administrator_id ) { $technician_ids[] = (int) $administrator_id; }
 		}
 		foreach ( array_unique( $technician_ids ) as $technician_id ) {
-			if ( ! Authorization::can_access_company( $company_id, $technician_id ) ) { continue; }
+			$membership = ( new CompanyUserRepository() )->find( $company_id, $technician_id );
+			if ( ! $membership || empty( $membership['active'] ) ) { continue; }
 			$user = get_userdata( $technician_id ); if ( ! $user ) { continue; }
 			echo '<option value="' . esc_attr( (string) $technician_id ) . '" ' . selected( (int) $call['technician_user_id'], $technician_id, false ) . '>' . esc_html( $user->display_name ) . '</option>';
 		}
