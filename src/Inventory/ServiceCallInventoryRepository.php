@@ -26,6 +26,12 @@ final class ServiceCallInventoryRepository {
 		return $this->wpdb->get_results($this->wpdb->prepare('SELECT * FROM %i WHERE company_id = %d AND service_call_id = %d ORDER BY created_at,id',$this->table,CompanyContext::current_company_id(),$service_call_id),ARRAY_A);
 	}
 
+	public function total_for_service_call( int $service_call_id ): float {
+		// Returns are stored as negative snapshot rows, so summing the immutable extended selling snapshots yields the authoritative net inventory/material selling total.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Authoritative current Service Call inventory total from immutable usage/return snapshots.
+		return (float) $this->wpdb->get_var( $this->wpdb->prepare( 'SELECT COALESCE(SUM(extended_selling_price),0) FROM %i WHERE company_id = %d AND service_call_id = %d', $this->table, CompanyContext::current_company_id(), $service_call_id ) );
+	}
+
 	public function find( int $id ) {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Service call inventory usage must remain current.
 		return $this->wpdb->get_row($this->wpdb->prepare('SELECT * FROM %i WHERE company_id = %d AND id = %d',$this->table,CompanyContext::current_company_id(),$id),ARRAY_A);
