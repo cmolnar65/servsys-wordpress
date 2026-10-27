@@ -15,6 +15,7 @@ final class ServiceCallCompletionCodesPage {
  }
  public function assign(): void {check_admin_referer('servsys_assign_completion_code');$call=$this->posted('service_call_id');$code=$this->posted('completion_code_id');$this->guard();$this->run($call,function()use($call,$code){(new CompletionCodeService())->assign($call,$code);});}
  public function unassign(): void {check_admin_referer('servsys_unassign_completion_code');$call=$this->posted('service_call_id');$code=$this->posted('completion_code_id');$this->guard();$this->run($call,function()use($call,$code){(new CompletionCodeService())->unassign($call,$code);});}
+ // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Both callers verify their action nonce before invoking this request helper.
  private function posted(string $key): int {return isset($_POST[$key])?absint(wp_unslash($_POST[$key])):0;}
  private function guard(): void {if(!current_user_can(Capabilities::ASSIGN_COMPLETION_CODES)){wp_die(esc_html__('Permission denied.','servsys'));}}
  private function run(int $call,callable $callback): void {$url=admin_url('admin.php?page=servsys-service-calls&service_call_id='.$call);try{$callback();}catch(\InvalidArgumentException|\RuntimeException $e){$url=add_query_arg('servsys_error',$e->getMessage(),$url);}wp_safe_redirect($url);exit;}
