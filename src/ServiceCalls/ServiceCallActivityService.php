@@ -1,6 +1,5 @@
 <?php
 namespace ServSys\ServiceCalls;
-use ServSys\Users\Authorization;
 use ServSys\Users\CompanyUserRepository;
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 final class ServiceCallActivityService {
@@ -8,8 +7,7 @@ final class ServiceCallActivityService {
  public function __construct(ServiceCallActivityRepository $activities=null,ServiceCallRepository $calls=null,CompanyUserRepository $members=null){$this->activities=$activities?:new ServiceCallActivityRepository();$this->calls=$calls?:new ServiceCallRepository();$this->members=$members?:new CompanyUserRepository();}
  public function save(int $service_call_id,array $input,int $id=0): int {
   $call=$this->calls->find($service_call_id);if(!$call){throw new \InvalidArgumentException('Service Call does not belong to the current company.');}
-  $technician=absint($input['technician_user_id']??0);if(!$technician||!get_userdata($technician)||!Authorization::can_access_company((int)$call['company_id'],$technician)){throw new \InvalidArgumentException('Technician is not an active user of this company.');}
-  $membership=$this->members->find((int)$call['company_id'],$technician);$truck=$membership&& !empty($membership['truck_number'])?sanitize_text_field($membership['truck_number']):null;
+  $technician=absint($input['technician_user_id']??0);$membership=$technician?$this->members->find((int)$call['company_id'],$technician):null;if(!$technician||!get_userdata($technician)||!$membership||empty($membership['active'])){throw new \InvalidArgumentException('Technician is not an active user of this company.');}$truck=$membership&& !empty($membership['truck_number'])?sanitize_text_field($membership['truck_number']):null;
   $times=array();foreach(array('dispatched_at','arrived_at','work_started_at','work_ended_at') as $key){$times[$key]=$this->datetime($input[$key]??'',$key);}
   $last=null;foreach(array('dispatched_at','arrived_at','work_started_at','work_ended_at') as $key){if(null===$times[$key]){continue;}if(null!==$last&&$times[$key]<$last){throw new \InvalidArgumentException('Technician activity timestamps must be chronological.');}$last=$times[$key];}
   $odo_start=$this->odometer($input['odometer_start']??null,'start');$odo_end=$this->odometer($input['odometer_end']??null,'end');if(null!==$odo_end&&null===$odo_start){throw new \InvalidArgumentException('Starting odometer reading is required when an ending reading is entered.');}if(null!==$odo_start&&null!==$odo_end&&$odo_end<$odo_start){throw new \InvalidArgumentException('Ending odometer reading cannot be less than the starting reading.');}
