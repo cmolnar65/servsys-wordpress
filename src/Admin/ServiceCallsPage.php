@@ -11,6 +11,7 @@ use ServSys\Equipment\EquipmentRepository;
 use ServSys\ServiceCalls\ServiceCallNoteRepository;
 use ServSys\ServiceCalls\ServiceCallNoteService;
 use ServSys\ServiceCalls\ServiceCallService;
+use ServSys\ServiceCalls\ServiceCallCloseoutService;
 use ServSys\Sites\SiteRepository;
 use ServSys\ServiceCalls\ServiceCallRepository;
 use ServSys\Users\Capabilities;
@@ -23,6 +24,8 @@ final class ServiceCallsPage {
 		add_action( 'admin_post_servsys_save_service_call', array( $this, 'save_service_call' ) );
 		add_action( 'admin_post_servsys_add_service_call_note', array( $this, 'add_note' ) );
 		add_action( 'admin_post_servsys_service_call_add_equipment', array( $this, 'add_equipment_from_form' ) );
+		add_action( 'admin_post_servsys_complete_service_call', array( $this, 'complete_service_call' ) );
+		add_action( 'admin_post_servsys_reopen_service_call', array( $this, 'reopen_service_call' ) );
 	}
 
 	public function register_menu(): void {
@@ -110,15 +113,18 @@ final class ServiceCallsPage {
 
 		echo '<p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-service-calls' ) ) . '">&larr; Return to Service Calls</a></p>';
 		echo '<h2>Service Call ' . esc_html( $call['call_number'] ?: (string) $call['id'] ) . '</h2>';
-		if ( current_user_can( Capabilities::EDIT_SERVICE_CALLS ) ) {
+		if ( current_user_can( Capabilities::EDIT_SERVICE_CALLS ) && 'completed' !== $call['status'] ) {
 			echo '<p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=servsys-service-calls&action=edit&service_call_id=' . $id ) ) . '">Edit Service Call</a></p>';
 		}
+		$this->render_closeout_controls( $call );
 		echo '<table class="widefat striped"><tbody>';
 		$this->row( 'Date', $call['service_date'] );
 		$this->row( 'Customer', $call['customer_name'] );
 		$this->row( 'Site', trim( ( $call['site_name'] ?: $call['site_address'] ) . ' ' . $call['site_city'] . ' ' . $call['site_state'] ) );
 		$this->row( 'Technician', $technician ? $technician->display_name : '' );
 		$this->row( 'Status', ucfirst( $call['status'] ) );
+		if ( 'completed' === $call['status'] ) { $this->row( 'Completed', (string) $call['completed_at'] ); }
+		if ( ! empty( $call['reopened_at'] ) ) { $this->row( 'Last Reopened', (string) $call['reopened_at'] ); }
 		$this->row( 'Follow-up', $call['follow_up_required'] ? ( $call['follow_up_date'] ?: 'Required — no date set' ) : 'None' );
 		echo '</tbody></table>';
 
@@ -253,8 +259,8 @@ final class ServiceCallsPage {
 		}
 		echo '</select></label></p>';
 		echo '<p><label>Status<br><select name="status">';
-		foreach ( array( 'open' => 'Open', 'completed' => 'Completed', 'cancelled' => 'Cancelled' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '" ' . selected( $call['status'], $value, false ) . '>' . esc_html( $label ) . '</option>'; }
-		echo '</select></label></p>';
+		foreach ( array( 'open' => 'Open', 'cancelled' => 'Cancelled' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '" ' . selected( $call['status'], $value, false ) . '>' . esc_html( $label ) . '</option>'; }
+		echo '</select></label></p><p class="description">Completed status is set only by the controlled completion workflow.</p>';
 		foreach ( array( 'reason' => 'Reason for Call', 'services_performed' => 'Services Performed', 'parts_notes' => 'Parts / Materials', 'recommendations' => 'Recommendations' ) as $name => $label ) {
 			echo '<p><label>' . esc_html( $label ) . '<br><textarea class="large-text" rows="4" name="' . esc_attr( $name ) . '">' . esc_textarea( $call[$name] ) . '</textarea></label></p>';
 		}
@@ -322,6 +328,38 @@ final class ServiceCallsPage {
 		$id = ( new ServiceCallService() )->save( $customer_id, $site_id, $data, $id );
 		wp_safe_redirect( admin_url( 'admin.php?page=servsys-service-calls&service_call_id=' . $id ) );
 		exit;
+	}
+
+	public function complete_service_call(): void {
+		$id = isset( $_POST['service_call_id'] ) ? absint( wp_unslash( $_POST['service_call_id'] ) ) : 0;
+		check_admin_referer( 'servsys_complete_service_call_' . $id );
+		if ( ! current_user_can( Capabilities::COMPLETE_SERVICE_CALLS ) ) { wp_die( esc_html__( 'Permission denied.', 'servsys' ) ); }
+		$this->run_closeout( $id, function () use ( $id ) { ( new ServiceCallCloseoutService() )->complete( $id ); } );
+	}
+
+	public function reopen_service_call(): void {
+		$id = isset( $_POST['service_call_id'] ) ? absint( wp_unslash( $_POST['service_call_id'] ) ) : 0;
+		check_admin_referer( 'servsys_reopen_service_call_' . $id );
+		if ( ! current_user_can( Capabilities::REOPEN_SERVICE_CALLS ) ) { wp_die( esc_html__( 'Permission denied.', 'servsys' ) ); }
+		$this->run_closeout( $id, function () use ( $id ) { ( new ServiceCallCloseoutService() )->reopen( $id ); } );
+	}
+
+	private function render_closeout_controls( array $call ): void {
+		$id = (int) $call['id'];
+		if ( 'open' === $call['status'] && current_user_can( Capabilities::COMPLETE_SERVICE_CALLS ) ) {
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">'; wp_nonce_field( 'servsys_complete_service_call_' . $id );
+			echo '<input type="hidden" name="action" value="servsys_complete_service_call"><input type="hidden" name="service_call_id" value="' . esc_attr( (string) $id ) . '">'; submit_button( 'Complete Service Call', 'primary', '', false ); echo '</form>';
+		}
+		if ( in_array( $call['status'], array( 'completed', 'cancelled' ), true ) && current_user_can( Capabilities::REOPEN_SERVICE_CALLS ) ) {
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">'; wp_nonce_field( 'servsys_reopen_service_call_' . $id );
+			echo '<input type="hidden" name="action" value="servsys_reopen_service_call"><input type="hidden" name="service_call_id" value="' . esc_attr( (string) $id ) . '">'; submit_button( 'Reopen Service Call', 'secondary', '', false ); echo '</form>';
+		}
+	}
+
+	private function run_closeout( int $id, callable $callback ): void {
+		$url = admin_url( 'admin.php?page=servsys-service-calls&service_call_id=' . $id );
+		try { $callback(); } catch ( \InvalidArgumentException | \RuntimeException $e ) { $url = add_query_arg( 'servsys_error', $e->getMessage(), $url ); }
+		wp_safe_redirect( $url ); exit;
 	}
 
 	private function row( string $label, string $value ): void {
