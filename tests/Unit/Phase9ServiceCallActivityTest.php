@@ -18,7 +18,8 @@ final class Phase9ServiceCallActivityTest extends TestCase {
  }
  public function test_activity_requires_valid_company_technician(): void {
   $p=file_get_contents(__DIR__.'/../../src/ServiceCalls/ServiceCallActivityService.php');
-  $this->assertStringContainsString('Authorization::can_access_company',$p);
+  $this->assertStringContainsString("$this->members->find((int)$call['company_id'],$technician)",$p);
+  $this->assertStringContainsString("empty($membership['active'])",$p);
   $this->assertStringContainsString('Technician is not an active user of this company.',$p);
  }
  public function test_activity_timestamps_must_be_chronological(): void {
