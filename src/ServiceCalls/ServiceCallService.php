@@ -39,7 +39,10 @@ final class ServiceCallService {
 		}
 
 		$status = isset( $input['status'] ) ? sanitize_key( $input['status'] ) : 'open';
-		if ( ! in_array( $status, array( 'open', 'completed', 'cancelled' ), true ) ) {
+		if ( 'completed' === $status ) {
+			throw new \InvalidArgumentException( 'Use the controlled Service Call completion workflow to complete a call.' );
+		}
+		if ( ! in_array( $status, array( 'open', 'cancelled' ), true ) ) {
 			throw new \InvalidArgumentException( 'Invalid service call status.' );
 		}
 
@@ -76,6 +79,9 @@ final class ServiceCallService {
 
 		if ( $id ) {
 			$existing = $this->repository->find( $id );
+			if ( $existing && 'completed' === $existing['status'] ) {
+				throw new \InvalidArgumentException( 'Completed Service Calls must be reopened before editing.' );
+			}
 			if ( ! $existing || (int) $existing['customer_id'] !== $customer_id || (int) $existing['site_id'] !== $site_id ) {
 				throw new \InvalidArgumentException( 'Service call does not belong to this customer site.' );
 			}
