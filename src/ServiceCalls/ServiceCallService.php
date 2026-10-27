@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use ServSys\Customers\CustomerRepository;
 use ServSys\Equipment\EquipmentRepository;
 use ServSys\Sites\SiteRepository;
-use ServSys\Users\Authorization;
+use ServSys\Users\CompanyUserRepository;
 
 final class ServiceCallService {
 	private $repository;
@@ -47,7 +47,8 @@ final class ServiceCallService {
 		}
 
 		$technician_user_id = isset( $input['technician_user_id'] ) ? absint( $input['technician_user_id'] ) : 0;
-		if ( $technician_user_id && ( ! get_userdata( $technician_user_id ) || ! Authorization::can_access_company( $company_id, $technician_user_id ) ) ) {
+		$technician_membership = $technician_user_id ? ( new CompanyUserRepository() )->find( $company_id, $technician_user_id ) : null;
+		if ( $technician_user_id && ( ! get_userdata( $technician_user_id ) || ! $technician_membership || empty( $technician_membership['active'] ) ) ) {
 			throw new \InvalidArgumentException( 'Selected technician is not an active user of this company.' );
 		}
 
